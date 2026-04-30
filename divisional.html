@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Divisional Charts & Planetary Analysis - AstroScope</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #07111f 0%, #0a1426 50%, #0d1830 100%);
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    /* HEADER */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      background: rgba(10, 20, 38, 0.5);
+      border-radius: 14px;
+      border-left: 4px solid #ffcc66;
+    }
+    
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      color: #ffcc66;
+      font-weight: 900;
+    }
+    
+    header p {
+      color: #7dd3fc;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+    
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .nav-btn {
+      padding: 10px 20px;
+      border: 1px solid #ffcc66;
+      background: transparent;
+      color: #ffcc66;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .nav-btn:hover {
+      background: #ffcc66;
+      color: #07111f;
+      transform: translateY(-2px);
+    }
+    
+    /* KUNDLI SECTION */
+    .section-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      color: #ffcc66;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #ffcc66;
+    }
+    
+    .kundli-container {
+      background: rgba(10, 20, 38, 0.78);
+      padding: 30px;
+      border-radius: 14px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 204, 102, 0.2);
+    }
+    
+    .kundli-chart {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      margin-bottom: 20px;
+    }
+    
+    .kundli-chart svg {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .kundli-chart svg text {
+      font-weight: 900;
+      paint-order: stroke;
+      stroke: #000;
+      stroke-width: 0.4px;
+      font-size: 16px;
+    }
+    
+    .highlight-source {
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
+    }
+    
+    .highlight-aspect {
+      opacity: 0.35;
+    }
+    
+    .kundli-chart line {
+      stroke-linecap: round;
+    }
+    
+    .planet-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+      justify-content: center;
+    }
+    
+    .planet-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #000;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+    
+    .planet-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .control-btn {
+      padding: 10px 18px;
+      background: #ffcc66;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #07111f;
+      transition: all 0.2s ease;
+    }
+    
+    .control-btn:hover {
+      background: #ffd580;
+      transform: translateY(-2px);
+    }
+    
+    /* PLANETS GRID */
+    .planets-grid {
+      background: rgba(10, 20, 38, 0.78);
+      padding: 30px;
+      border-radius: 14px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 204, 102, 0.2);
+    }
+    
+    .planets-showcase {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .planet-card {
+      background: rgba(20, 35, 65, 0.5);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #ffcc66;
+      transition: all 0.3s ease;
+    }
+    
+    .planet-card:hover {
+      background: rgba(30, 50, 85, 0.8);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(255, 204, 102, 0.2);
+    }
+    
+    .planet-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: #ffcc66;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    
+    .planet-detail {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      padding: 6px 0;
+      font-size: 0.9rem;
+    }
+    
+    .planet-detail label {
+      color: #7dd3fc;
+      font-weight: 500;
+    }
+    
+    .planet-detail value {
+      color: #e0e0e0;
+    }
+    
+    /* DIVISIONAL CHARTS */
+    .charts-grid {
+      background: rgba(10, 20, 38, 0.78);
+      padding: 30px;
+      border-radius: 14px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 204, 102, 0.2);
+    }
+    
+    .chart-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .chart-item {
+      background: rgba(20, 35, 65, 0.5);
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(125, 211, 252, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .chart-item:hover {
+      background: rgba(30, 50, 85, 0.8);
+      border-color: #ffcc66;
+      transform: translateY(-4px);
+    }
+    
+    .chart-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      color: #7dd3fc;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    
+    .chart-desc {
+      font-size: 0.85rem;
+      color: #a0a0a0;
+      margin-bottom: 10px;
+    }
+    
+    .chart-status {
+      padding: 8px 12px;
+      background: rgba(255, 204, 102, 0.1);
+      border-radius: 6px;
+      color: #ffcc66;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    
+    /* STRENGTH MATRIX */
+    .strength-matrix {
+      background: rgba(10, 20, 38, 0.78);
+      padding: 30px;
+      border-radius: 14px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 204, 102, 0.2);
+      overflow-x: auto;
+    }
+    
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    .matrix-table th, .matrix-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 204, 102, 0.1);
+    }
+    
+    .matrix-table th {
+      background: rgba(255, 204, 102, 0.1);
+      color: #ffcc66;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+    }
+    
+    .matrix-table tr:hover {
+      background: rgba(125, 211, 252, 0.1);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    
+    .status-exalted {
+      background: rgba(34, 197, 94, 0.3);
+      color: #86efac;
+    }
+    
+    .status-debilitated {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    
+    .status-normal {
+      background: rgba(125, 211, 252, 0.3);
+      color: #bae6fd;
+    }
+    
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 60px;
+      border-top: 1px solid rgba(255, 204, 102, 0.1);
+    }
+    
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      header h1 {
+        font-size: 1.6rem;
+      }
+      
+      .planets-showcase, .chart-items {
+        grid-template-columns: 1fr;
+      }
+      
+      .kundli-chart svg {
+        max-width: 100%;
+      }
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #7dd3fc;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <div>
+        <h1>⭐ Divisional Charts & Planets</h1>
+        <p>Professional Planetary Analysis & Kundli Visualization</p>
+      </div>
+      <div class="nav-buttons">
+        <button class="nav-btn" onclick="loadDemoData()" style="background: #ffcc66; color: #07111f; border-color: #ffcc66;">📊 Load Demo</button>
+        <a href="index.html" class="nav-btn">← Back to Form</a>
+      </div>
+    </header>
+
+    <!-- KUNDLI SECTION -->
+    <div class="kundli-container">
+      <h2 class="section-header">🏠 Kundli Chart (D1)</h2>
+      
+      <div class="planet-buttons" id="kundliPlanetButtons"></div>
+      
+      <div class="control-buttons">
+        <button class="control-btn" onclick="showAllAspects()">✨ Show All Aspects</button>
+        <button class="control-btn" onclick="clearHighlights()">🔄 Clear Highlights</button>
+      </div>
+      
+      <div class="kundli-chart">
+        <svg viewBox="0 0 600 600" style="max-width: 500px; margin: 0 auto; display: block;">
+          <rect x="40" y="40" width="520" height="520" fill="#fff" stroke="#000"/>
+          <polygon points="300,40 560,300 300,560 40,300" fill="none" stroke="#000"/>
+          <line x1="40" y1="40" x2="560" y2="560" stroke="#000"/>
+          <line x1="560" y1="40" x2="40" y2="560" stroke="#000"/>
+          
+          <g id="house-1" transform="translate(300,95)"></g>
+          <g id="house-2" transform="translate(440,120)"></g>
+          <g id="house-3" transform="translate(505,210)"></g>
+          <g id="house-4" transform="translate(535,300)"></g>
+          <g id="house-5" transform="translate(505,390)"></g>
+          <g id="house-6" transform="translate(440,480)"></g>
+          <g id="house-7" transform="translate(300,505)"></g>
+          <g id="house-8" transform="translate(160,480)"></g>
+          <g id="house-9" transform="translate(95,390)"></g>
+          <g id="house-10" transform="translate(65,300)"></g>
+          <g id="house-11" transform="translate(95,210)"></g>
+          <g id="house-12" transform="translate(160,120)"></g>
+          
+          <g id="aspectLayer"></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PLANETS SECTION -->
+    <div class="planets-grid">
+      <h2 class="section-header">🪐 Planetary Positions & Strengths</h2>
+      <div class="planets-showcase" id="planetsContainer">
+        <div class="loading">Load demo data or submit a chart to see planetary details...</div>
+      </div>
+    </div>
+
+    <!-- DIVISIONAL CHARTS -->
+    <div class="charts-grid">
+      <h2 class="section-header">📊 Divisional Charts (D2 - D60)</h2>
+      <div class="chart-items" id="chartsContainer">
+        <div class="loading">Load demo data or submit a chart to see divisional charts...</div>
+      </div>
+    </div>
+
+    <!-- STRENGTH MATRIX -->
+    <div class="strength-matrix">
+      <h2 class="section-header">💪 Planetary Strength Matrix</h2>
+      <table class="matrix-table" id="strengthTable">
+        <thead>
+          <tr>
+            <th>Planet</th>
+            <th>House</th>
+            <th>Sign</th>
+            <th>Dignity</th>
+            <th>Degree</th>
+            <th>Retrograde</th>
+          </tr>
+        </thead>
+        <tbody id="strengthBody">
+          <tr><td colspan="6" style="text-align: center; padding: 20px; color: #7dd3fc;">No data loaded yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <p>🔮 AstroScope Divisional Charts | Professional Astrology Analysis Platform</p>
+      <p style="margin-top: 8px; font-size: 0.8rem; color: #555;">Data visualization powered by FreeAstrologyAPI • Accurate to topocentric coordinates</p>
+    </footer>
+  </div>
+
+  <script>
+    // Kundli color mapping
+    const KUNDLI_COLORS = {
+      Sun: "#f7c948", Moon: "#a5d8ff", Mars: "#ff6b6b",
+      Mercury: "#69db7c", Jupiter: "#ffd43b", Venus: "#faa2c1",
+      Saturn: "#748ffc", Rahu: "#da77f2", Ketu: "#adb5bd"
+    };
+
+    // Kundli aspect degrees
+    const KUNDLI_ASPECTS = {
+      Sun: [7], Moon: [7], Mercury: [7], Venus: [7],
+      Mars: [4,7,8],
+      Jupiter: [5,7,9],
+      Saturn: [3,7,10],
+      Rahu: [5,7,9],
+      Ketu: [5,7,9]
+    };
+
+    // Divisional charts metadata
+    const DIVISIONAL_CHARTS = {
+      D2: { name: "Hora", desc: "Wealth & Resources" },
+      D3: { name: "Drekkana", desc: "Siblings & Courage" },
+      D4: { name: "Chaturthamsha", desc: "Property & Vehicles" },
+      D5: { name: "Panchamsha", desc: "Children & Creativity" },
+      D6: { name: "Shashtamsha", desc: "Health & Enemies" },
+      D7: { name: "Saptamsha", desc: "Longevity & Health" },
+      D8: { name: "Ashtamsha", desc: "Accidents & Longevity" },
+      D9: { name: "Navamsha", desc: "Spouse & Partnerships" },
+      D10: { name: "Dasamsha", desc: "Career & Status" },
+      D11: { name: "Rudramsha", desc: "Gains & Profits" },
+      D12: { name: "Dwadashamsha", desc: "Parents & Losses" },
+      D16: { name: "Shodamsha", desc: "Joys & Comforts" },
+      D20: { name: "Vimshamsha", desc: "Spiritual Progress" },
+      D24: { name: "Chaturvimshamsha", desc: "Education & Learning" },
+      D27: { name: "Saptavimshamsha", desc: "Strengths & Weaknesses" },
+      D30: { name: "Trimshamsha", desc: "Misfortunes & Suffering" },
+      D40: { name: "Khavedamsha", desc: "Auspiciousness" },
+      D45: { name: "Akshavedamsha", desc: "Sins & Merits" },
+      D60: { name: "Shashtyamsha", desc: "Ultimate Divisional Chart" }
+    };
+
+    // Load data from sessionStorage (passed from main page)
+    function loadData() {
+      const data = sessionStorage.getItem('astroData');
+      if (!data) {
+        console.log('ℹ No data in sessionStorage. Submit a chart from the main page or click "Load Demo" button.');
+        return false;
+      }
+      
+      try {
+        const parsed = JSON.parse(data);
+        console.log('✓ Loaded data from sessionStorage:', {
+          d1Planets: Object.keys(parsed.d1).length,
+          d9Planets: Object.keys(parsed.d9).length,
+          endpoints: Object.keys(parsed.endpointOutputs).length,
+          profile: parsed.profile
+        });
+        
+        if (parsed.d1 && Object.keys(parsed.d1).length > 0) {
+          renderKundli(parsed.d1);
+          renderPlanets(parsed.d1);
+          renderDivisionalCharts(parsed.endpointOutputs);
+          renderStrengthMatrix(parsed.d1);
+          
+          // Show profile info in header if available
+          if (parsed.profile && parsed.profile.name !== 'Client') {
+            updateProfileDisplay(parsed.profile);
+          }
+          
+          return true;
+        }
+      } catch (err) {
+        console.error('Failed to parse astro data:', err);
+      }
+      
+      return false;
+    }
+    
+    // Update profile display in header
+    function updateProfileDisplay(profile) {
+      const headerP = document.querySelector('header p');
+      if (headerP) {
+        headerP.textContent = `${profile.name} • ${profile.dob} • ${profile.location}`;
+      }
+    }
+
+    // Load demo data
+    function loadDemoData() {
+      const demoData = {
+        d1: {
+          Sun: { house_number: 1, sign: "Cancer", degree: 27.2, speed: 1.01, dignity: "Normal", retrograde: false },
+          Moon: { house_number: 3, sign: "Virgo", degree: 18.04, speed: 13.23, dignity: "Normal", retrograde: false },
+          Mars: { house_number: 10, sign: "Aries", degree: 29.68, speed: 0.65, dignity: "Exalted", retrograde: false },
+          Mercury: { house_number: 2, sign: "Leo", degree: 12.84, speed: 1.42, dignity: "Normal", retrograde: false },
+          Jupiter: { house_number: 9, sign: "Pisces", degree: 24.14, speed: 0.04, dignity: "Exalted", retrograde: false },
+          Venus: { house_number: 11, sign: "Taurus", degree: 14.32, speed: 1.19, dignity: "Normal", retrograde: false },
+          Saturn: { house_number: 7, sign: "Capricorn", degree: 20.55, speed: 0.03, dignity: "Exalted", retrograde: true },
+          Rahu: { house_number: 5, sign: "Gemini", degree: 15.2, speed: -3.34, dignity: "Normal", retrograde: false },
+          Ketu: { house_number: 11, sign: "Sagittarius", degree: 15.2, speed: 3.34, dignity: "Normal", retrograde: false }
+        },
+        endpointOutputs: {
+          d2: { ok: true },
+          d3: { ok: true },
+          d4: { ok: true },
+          d5: { ok: true },
+          d6: { ok: true },
+          d7: { ok: true },
+          d8: { ok: true },
+          d9: { ok: true },
+          d10: { ok: true },
+          d11: { ok: true },
+          d12: { ok: true }
+        }
+      };
+      
+      renderKundli(demoData.d1);
+      renderPlanets(demoData.d1);
+      renderDivisionalCharts(demoData.endpointOutputs);
+      renderStrengthMatrix(demoData.d1);
+    }
+
+    // Render Kundli chart
+    function renderKundli(d1Chart) {
+      if (!d1Chart || Object.keys(d1Chart).length === 0) return;
+      
+      const kundliChart = [];
+      Object.entries(d1Chart || {}).forEach(([planet, data]) => {
+        const house = Number(data.house_number || data.house || 0);
+        if (house >= 1 && house <= 12) {
+          kundliChart.push({ name: planet, house });
+        }
+      });
+      
+      if (kundliChart.length > 0) {
+        renderKundliHouses(kundliChart);
+        renderKundliButtons(kundliChart);
+      }
+    }
+
+    // Render planets in houses (improved for multiple planets)
+    function renderKundliHouses(chart) {
+      const ns = "http://www.w3.org/2000/svg";
+      
+      // Clear existing content
+      for (let i = 1; i <= 12; i++) {
+        const el = document.getElementById("house-" + i);
+        if (el) el.innerHTML = "";
+      }
+      
+      // Group planets by house
+      const planetsByHouse = {};
+      chart.forEach(p => {
+        if (!planetsByHouse[p.house]) {
+          planetsByHouse[p.house] = [];
+        }
+        planetsByHouse[p.house].push(p);
+      });
+      
+      // Render planets in each house with proper spacing
+      Object.entries(planetsByHouse).forEach(([houseNum, planets]) => {
+        const el = document.getElementById("house-" + houseNum);
+        if (!el) return;
+        
+        // Create a group for all planets in this house
+        const g = document.createElementNS(ns, "g");
+        
+        planets.forEach((p, idx) => {
+          const t = document.createElementNS(ns, "text");
+          t.textContent = p.name[0];
+          t.setAttribute("fill", KUNDLI_COLORS[p.name] || "#000");
+          t.setAttribute("text-anchor", "middle");
+          t.setAttribute("font-size", "14");
+          t.setAttribute("y", idx * 16);
+          t.setAttribute("class", "planet-text");
+          g.appendChild(t);
+        });
+        
+        el.appendChild(g);
+      });
+    }
+
+    // Render planet buttons (with house grouping indicator)
+    function renderKundliButtons(chart) {
+      const box = document.getElementById("kundliPlanetButtons");
+      box.innerHTML = "";
+      
+      // Group planets by house for tooltip info
+      const planetsByHouse = {};
+      chart.forEach(p => {
+        if (!planetsByHouse[p.house]) {
+          planetsByHouse[p.house] = [];
+        }
+        planetsByHouse[p.house].push(p);
+      });
+      
+      chart.forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "planet-btn";
+        btn.textContent = p.name;
+        btn.style.background = KUNDLI_COLORS[p.name];
+        
+        // Add tooltip showing house mates if multiple planets in same house
+        const housemates = planetsByHouse[p.house];
+        if (housemates.length > 1) {
+          const others = housemates.filter(x => x.name !== p.name).map(x => x.name).join(", ");
+          btn.title = `House ${p.house} • Together with: ${others}`;
+          btn.style.boxShadow = "0 0 8px rgba(255,255,255,0.5) inset";
+        } else {
+          btn.title = `${p.name} in House ${p.house}`;
+        }
+        
+        btn.onclick = () => highlightSingle(p);
+        box.appendChild(btn);
+      });
+    }
+
+    // Highlight single planet
+    function highlightSingle(p) {
+      clearHighlights();
+      drawAspectSet([p]);
+    }
+
+    // Show all aspects (handles multiple planets per house)
+    function showAllAspects() {
+      clearHighlights();
+      const chart = [];
+      
+      // Collect all planets from houses 1-12
+      for (let i = 1; i <= 12; i++) {
+        const el = document.getElementById("house-" + i);
+        if (el && el.querySelectorAll('text').length > 0) {
+          el.querySelectorAll('text').forEach(textEl => {
+            const planetInitial = textEl.textContent;
+            // Find the full planet name from the buttons
+            const buttons = document.querySelectorAll('#kundliPlanetButtons button');
+            buttons.forEach(btn => {
+              if (btn.textContent[0] === planetInitial) {
+                chart.push({ name: btn.textContent, house: i });
+              }
+            });
+          });
+        }
+      }
+      
+      if (chart.length > 0) {
+        drawAspectSet(chart);
+      }
+    }
+
+    // Draw aspect lines
+    function drawAspectSet(list) {
+      const ns = "http://www.w3.org/2000/svg";
+      const layer = document.getElementById("aspectLayer");
+      layer.innerHTML = "";
+      
+      list.forEach(p => {
+        const from = p.house;
+        const el = document.getElementById("house-" + from);
+        if (el) el.classList.add("highlight-source");
+        
+        (KUNDLI_ASPECTS[p.name] || []).forEach(a => {
+          const to = ((from + a - 2) % 12) + 1;
+          const toEl = document.getElementById("house-" + to);
+          if (toEl) toEl.classList.add("highlight-aspect");
+          
+          const line = document.createElementNS(ns, "line");
+          const f = getXY(from);
+          const t = getXY(to);
+          
+          line.setAttribute("x1", f.x);
+          line.setAttribute("y1", f.y);
+          line.setAttribute("x2", t.x);
+          line.setAttribute("y2", t.y);
+          line.setAttribute("stroke", KUNDLI_COLORS[p.name]);
+          line.setAttribute("stroke-width", "1.8");
+          line.setAttribute("opacity", "0.5");
+          
+          layer.appendChild(line);
+        });
+      });
+    }
+
+    // Clear highlights
+    function clearHighlights() {
+      for (let i = 1; i <= 12; i++) {
+        const el = document.getElementById("house-" + i);
+        if (el) el.classList.remove("highlight-source", "highlight-aspect");
+      }
+      document.getElementById("aspectLayer").innerHTML = "";
+    }
+
+    // Get house coordinates
+    function getXY(h) {
+      const map = {
+        1: [300, 95], 2: [440, 120], 3: [505, 210], 4: [535, 300],
+        5: [505, 390], 6: [440, 480], 7: [300, 505], 8: [160, 480],
+        9: [95, 390], 10: [65, 300], 11: [95, 210], 12: [160, 120]
+      };
+      return { x: map[h][0], y: map[h][1] };
+    }
+
+    // Render planets
+    function renderPlanets(d1Chart) {
+      const container = document.getElementById("planetsContainer");
+      if (!d1Chart || Object.keys(d1Chart).length === 0) {
+        container.innerHTML = '<div class="loading">No planet data available</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      Object.entries(d1Chart).forEach(([planet, data]) => {
+        const card = document.createElement("div");
+        card.className = "planet-card";
+        
+        // Handle various data structures
+        const house = data.house_number || data.house || '—';
+        const sign = data.sign || data.zodiac_sign_name || data.current_sign || '—';
+        const degree = data.degree || data.degrees || '—';
+        const speed = data.speed || '—';
+        const dignity = data.dignity || "Normal";
+        const retrograde = data.retrograde || data.isRetro === "true";
+        
+        let statusClass = "status-normal";
+        if (dignity.includes("Exalted")) statusClass = "status-exalted";
+        if (dignity.includes("Debilitated")) statusClass = "status-debilitated";
+        
+        const degreeStr = typeof degree === 'number' ? degree.toFixed(2) + '°' : degree;
+        const speedStr = typeof speed === 'number' ? speed.toFixed(2) : speed;
+        
+        card.innerHTML = `
+          <div class="planet-name">${planet}</div>
+          <div class="planet-detail">
+            <label>House:</label>
+            <value>${house}</value>
+          </div>
+          <div class="planet-detail">
+            <label>Sign:</label>
+            <value>${sign}</value>
+          </div>
+          <div class="planet-detail">
+            <label>Degree:</label>
+            <value>${degreeStr}</value>
+          </div>
+          <div class="planet-detail">
+            <label>Speed:</label>
+            <value>${speedStr}</value>
+          </div>
+          <div class="planet-detail">
+            <label>Dignity:</label>
+            <span class="status-badge ${statusClass}">${dignity}</span>
+          </div>
+          <div class="planet-detail">
+            <label>Retrograde:</label>
+            <value>${retrograde ? 'Yes ℜ' : 'No'}</value>
+          </div>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+
+    // Render divisional charts
+    function renderDivisionalCharts(endpointOutputs) {
+      const container = document.getElementById("chartsContainer");
+      if (!endpointOutputs || Object.keys(endpointOutputs).length === 0) {
+        container.innerHTML = '<div class="loading" style="grid-column: 1/-1;">No divisional charts loaded yet</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      Object.entries(DIVISIONAL_CHARTS).forEach(([key, info]) => {
+        const hasData = endpointOutputs[key] && Object.keys(endpointOutputs[key]).length > 0;
+        
+        const item = document.createElement("div");
+        item.className = "chart-item";
+        
+        item.innerHTML = `
+          <div class="chart-name">${key}</div>
+          <div class="chart-desc"><strong>${info.name}</strong></div>
+          <div class="chart-desc">${info.desc}</div>
+          <div class="chart-status">${hasData ? '✓ Loaded' : '⏸ Queued'}</div>
+        `;
+        
+        container.appendChild(item);
+      });
+    }
+
+    // Render strength matrix
+    function renderStrengthMatrix(d1Chart) {
+      const tbody = document.getElementById("strengthBody");
+      if (!d1Chart || Object.keys(d1Chart).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #7dd3fc;">No data loaded</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = '';
+      
+      Object.entries(d1Chart).forEach(([planet, data]) => {
+        const house = data.house_number || data.house || '—';
+        const sign = data.sign || data.zodiac_sign_name || data.current_sign || '—';
+        const dignity = data.dignity || "Normal";
+        const degree = data.degree || data.degrees || '—';
+        const retrograde = data.retrograde || data.isRetro === "true";
+        
+        let statusClass = "status-normal";
+        if (dignity.includes("Exalted")) statusClass = "status-exalted";
+        if (dignity.includes("Debilitated")) statusClass = "status-debilitated";
+        
+        const degreeStr = typeof degree === 'number' ? degree.toFixed(2) + '°' : degree;
+        
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${planet}</strong></td>
+          <td>${house}</td>
+          <td>${sign}</td>
+          <td><span class="status-badge ${statusClass}">${dignity}</span></td>
+          <td>${degreeStr}</td>
+          <td>${retrograde ? '<strong style="color: #ffa500;">ℜ Yes</strong>' : 'No'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Load data on page load
+    window.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>

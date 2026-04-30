@@ -35,9 +35,9 @@
       { id: "varjyam", name: "Varjyam", path: "varjyam", group: "panchang", default: false },
       { id: "ashtakoot", name: "Ashtakoot Score", path: "ashtakoot-score", group: "match-making", default: false },
       { id: "shadbala-summary", name: "Shad Bala Summary", path: "shadbala/summary", group: "shadbala", default: false },
-      { id: "shadbala-breakup", name: "Shad Bala Breakup", path: "shadbala/break-up", group: "shadbala", default: false },
-      { id: "vim-maha", name: "Vimsottari Maha Dasas", path: "vimsottari-dasa/maha-dasas", group: "dasa", default: false },
-      { id: "vim-maha-antar", name: "Maha + Antar Dasas", path: "vimsottari-dasa/maha-antar-dasas", group: "dasa", default: false }
+      { id: "shadbala-breakup", name: "Shad Bala Breakup", path: "shadbala/breakup", group: "shadbala", default: false },
+      { id: "vim-maha", name: "Vimsottari Maha Dasas", path: "vimsottari/maha-dasas", group: "dasa", default: false },
+      { id: "vim-maha-antar", name: "Vimsottari Maha + Antar Dasas", path: "vimsottari/dasa-information", group: "dasa", default: false }
     ];
 
     const zodiacMeta = {
@@ -711,6 +711,7 @@
       buildReferenceCards(d1);
       buildHouseRows(d1);
       buildStrengthGrid(d1);
+      renderKundliChart(d1);
       nodes.analysisBar.style.setProperty("--w", `${Math.min(100, 25 + planets * 9)}%`);
     }
 
@@ -797,6 +798,182 @@
       nodes.statusText.textContent = text;
     }
 
+    // Save astro data to sessionStorage for divisional charts page
+    function saveAstroDataToSession(state) {
+      try {
+        const profile = {
+          name: document.getElementById("name").value || "Client",
+          dob: document.getElementById("dob").value || "",
+          tob: document.getElementById("tob").value || "",
+          location: document.getElementById("location").value || "",
+          timezone: document.getElementById("timezone").value || ""
+        };
+        
+        const dataToSave = {
+          d1: state.d1 || {},
+          d9: state.d9 || {},
+          endpointOutputs: state.endpointOutputs || {},
+          summary: state.summary || {},
+          analysis: state.analysis || "",
+          profile: profile,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Save to sessionStorage
+        sessionStorage.setItem('astroData', JSON.stringify(dataToSave));
+        
+        // Also log to console for debugging
+        console.log('✓ Astro data saved to sessionStorage:', {
+          d1Planets: Object.keys(dataToSave.d1).length,
+          d9Planets: Object.keys(dataToSave.d9).length,
+          endpointsLoaded: Object.keys(dataToSave.endpointOutputs).length,
+          profile: profile
+        });
+        
+        return true;
+      } catch (err) {
+        console.error('Failed to save astro data to sessionStorage:', err);
+        return false;
+      }
+    }
+
+    /* ========== KUNDLI VISUALIZATION ENGINE ========== */
+
+    const KUNDLI_COLORS = {
+      Sun: "#f7c948",
+      Moon: "#a5d8ff",
+      Mars: "#ff6b6b",
+      Mercury: "#69db7c",
+      Jupiter: "#ffd43b",
+      Venus: "#faa2c1",
+      Saturn: "#748ffc",
+      Rahu: "#da77f2",
+      Ketu: "#adb5bd"
+    };
+
+    const KUNDLI_ASPECTS = {
+      Sun: [7],
+      Moon: [7],
+      Mercury: [7],
+      Venus: [7],
+      Mars: [4, 7, 8],
+      Jupiter: [5, 7, 9],
+      Saturn: [3, 7, 10],
+      Rahu: [5, 7, 9],
+      Ketu: [5, 7, 9]
+    };
+
+    function renderKundliChart(d1Chart) {
+      const kundliChart = [];
+      Object.entries(d1Chart || {}).forEach(([planet, data]) => {
+        const house = Number(data.house_number || 0);
+        if (house >= 1 && house <= 12) {
+          kundliChart.push({ name: planet, house });
+        }
+      });
+
+      renderKundliHouses(kundliChart);
+      renderKundliButtons(kundliChart);
+    }
+
+    function renderKundliHouses(chart) {
+      for (let i = 1; i <= 12; i++) {
+        const el = document.getElementById("house-" + i);
+        if (el) el.innerHTML = "";
+      }
+
+      const ns = "http://www.w3.org/2000/svg";
+      chart.forEach(p => {
+        const el = document.getElementById("house-" + p.house);
+        if (!el) return;
+
+        const text = document.createElementNS(ns, "text");
+        text.textContent = p.name[0];
+        text.setAttribute("fill", KUNDLI_COLORS[p.name] || "#000");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "15");
+        el.appendChild(text);
+      });
+    }
+
+    function renderKundliButtons(chart) {
+      const box = document.getElementById("kundliPlanetButtons");
+      if (!box) return;
+      box.innerHTML = "";
+
+      chart.forEach(p => {
+        const btn = document.createElement("button");
+        btn.textContent = p.name;
+        btn.style.background = KUNDLI_COLORS[p.name] || "#666";
+        btn.className = "btn btn-secondary";
+        btn.addEventListener("click", () => kundliHighlightSingle(p));
+        box.appendChild(btn);
+      });
+    }
+
+    function kundliHighlightSingle(p) {
+      kundliClearHighlights();
+      kundliDrawAspectSet([p]);
+    }
+
+    function kundliShowAllAspects(chart) {
+      kundliClearHighlights();
+      kundliDrawAspectSet(chart);
+    }
+
+    function kundliDrawAspectSet(list) {
+      const ns = "http://www.w3.org/2000/svg";
+      const layer = document.getElementById("aspectLayer");
+      if (!layer) return;
+      layer.innerHTML = "";
+
+      list.forEach(p => {
+        const from = p.house;
+        const sourceEl = document.getElementById("house-" + from);
+        if (sourceEl) sourceEl.classList.add("highlight-source");
+
+        (KUNDLI_ASPECTS[p.name] || []).forEach(a => {
+          const to = ((from + a - 2) % 12) + 1;
+          const targetEl = document.getElementById("house-" + to);
+          if (targetEl) targetEl.classList.add("highlight-aspect");
+
+          const line = document.createElementNS(ns, "line");
+          const f = kundliGetXY(from);
+          const t = kundliGetXY(to);
+
+          line.setAttribute("x1", f.x);
+          line.setAttribute("y1", f.y);
+          line.setAttribute("x2", t.x);
+          line.setAttribute("y2", t.y);
+          line.setAttribute("stroke", KUNDLI_COLORS[p.name]);
+          line.setAttribute("stroke-width", "1.8");
+          line.setAttribute("opacity", "0.5");
+
+          layer.appendChild(line);
+        });
+      });
+    }
+
+    function kundliClearHighlights() {
+      for (let i = 1; i <= 12; i++) {
+        const el = document.getElementById("house-" + i);
+        if (el) {
+          el.classList.remove("highlight-source", "highlight-aspect");
+        }
+      }
+      const layer = document.getElementById("aspectLayer");
+      if (layer) layer.innerHTML = "";
+    }
+
+    function kundliGetXY(h) {
+      const map = {
+        1: [300, 95], 2: [440, 120], 3: [505, 210], 4: [535, 300],
+        5: [505, 390], 6: [440, 480], 7: [300, 505], 8: [160, 480],
+        9: [95, 390], 10: [65, 300], 11: [95, 210], 12: [160, 120]
+      };
+      return { x: map[h][0], y: map[h][1] };
+    }
+
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -867,7 +1044,7 @@
       };
     }
 
-    async function fetchSelectedAstroApis(payload, config, selectedEndpoints) {
+    async function fetchSelectedAstroApis(payload, eventData, config, selectedEndpoints) {
       const keys = getAstroKeys(config);
       const responseMap = {};
       
@@ -891,7 +1068,11 @@
           `Request ${index + 1}/${total}: ${endpoint.name} ...`
         );
 
-        const result = await fetchAstroEndpointWithRetry(endpoint.path, payload, keys);
+        // Some endpoints (like vimsottari/dasa-information) require an `event_data` object
+        const needsEventData = endpoint.path === "vimsottari/dasa-information" || endpoint.id === "vim-maha-antar";
+        const payloadToSend = needsEventData ? { ...payload, event_data: eventData } : payload;
+
+        const result = await fetchAstroEndpointWithRetry(endpoint.path, payloadToSend, keys);
         if (result.ok) {
           responseMap[endpoint.id] = {
             ok: true,
@@ -933,24 +1114,34 @@
       const latLng = locationCandidate?.geometry || { lat: 19.076, lng: 72.8777 };
       const [year, month, date] = profile.dob.split("-").map(Number);
       const [hours, minutes] = profile.tob.split(":").map(Number);
-      const basePayload = {
-        year,
-        month,
-        date,
-        hours,
-        minutes,
-        seconds: 0,
-        latitude: latLng.lat,
-        longitude: latLng.lng,
-        timezone: safeNumber(profile.timezone, 5.5),
-        settings: {
-          observation_point: "topocentric",
-          ayanamsha: "lahiri"
-        }
-      };
+        const basePayload = {
+          year,
+          month,
+          date,
+          hours,
+          minutes,
+          seconds: 0,
+          latitude: latLng.lat,
+          longitude: latLng.lng,
+          timezone: safeNumber(profile.timezone, 5.5),
+          settings: {
+            observation_point: "topocentric",
+            ayanamsha: "lahiri"
+          }
+        };
+
+        // Build a default event_data object for endpoints that require a separate event date/time
+        const eventData = {
+          year,
+          month,
+          date,
+          hours,
+          minutes,
+          seconds: 0
+        };
 
       const selected = getSelectedApis();
-      const endpointOutputs = await fetchSelectedAstroApis(basePayload, config, selected);
+      const endpointOutputs = await fetchSelectedAstroApis(basePayload, eventData, config, selected);
       requireCoreChartData(endpointOutputs);
       const d1Raw = endpointOutputs.d1?.ok ? endpointOutputs.d1.data : null;
       const d9Raw = endpointOutputs.d9?.ok ? endpointOutputs.d9.data : null;
@@ -1113,6 +1304,9 @@ Rules:
         updateQueueDisplay(finalQueueState);
         
         updateSummary(state.d1, state.d9);
+        
+        // Save data to sessionStorage for divisional charts page
+        saveAstroDataToSession(state);
 
         const report = await generateGeminiNarrative(profile, state.d1, state.d9, state.endpointOutputs);
         state.analysis = report;
@@ -1238,6 +1432,20 @@ Rules:
     nodes.selectAllApisBtn.addEventListener("click", () => setApiSelection("all"));
     nodes.clearApisBtn.addEventListener("click", () => setApiSelection("none"));
     nodes.chartApisBtn.addEventListener("click", () => setApiSelection("divisional"));
+
+    if (document.getElementById("kundliShowAllBtn")) {
+      document.getElementById("kundliShowAllBtn").addEventListener("click", () => {
+        const chart = Object.entries(state.d1 || {}).map(([planet, data]) => ({
+          name: planet,
+          house: Number(data.house_number || 0)
+        })).filter(p => p.house >= 1 && p.house <= 12);
+        kundliShowAllAspects(chart);
+      });
+    }
+
+    if (document.getElementById("kundliClearBtn")) {
+      document.getElementById("kundliClearBtn").addEventListener("click", kundliClearHighlights);
+    }
 
     renderEndpointSelector();
     nodes.name.value = nodes.name.value || "Client";

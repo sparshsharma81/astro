@@ -74,6 +74,7 @@
         <div class="actions">
           <button class="btn btn-secondary" id="demoBtn" type="button">Load Demo Data</button>
           <button class="btn btn-primary" id="submitBtn" type="button">Generate Analysis</button>
+          <a href="divisional.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">📊 View Divisional Charts</a>
         </div>
       </div>
 
@@ -187,6 +188,43 @@
         <div class="card">
           <h3>D9 / Navamsa Chart</h3>
           <div id="d9Container" class="tiny muted">No chart loaded yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Kundli Visualization</h2>
+          <div class="sub">Interactive birth chart showing planets, houses, and planetary aspects. Click any planet to highlight its aspects.</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:center; margin-bottom:20px;">
+        <button class="btn btn-secondary" id="kundliShowAllBtn" type="button">Show All Aspects</button>
+        <button class="btn btn-secondary" id="kundliClearBtn" type="button">Clear Highlights</button>
+      </div>
+      <div id="kundliPlanetButtons" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px;"></div>
+      <div style="display:flex; justify-content:center; overflow-x:auto;">
+        <div class="kundli-chart">
+          <svg viewBox="0 0 600 600" style="width:480px; height:480px; min-width:480px;">
+            <rect x="40" y="40" width="520" height="520" fill="#fff" stroke="#000"/>
+            <polygon points="300,40 560,300 300,560 40,300" fill="none" stroke="#000"/>
+            <line x1="40" y1="40" x2="560" y2="560" stroke="#000"/>
+            <line x1="560" y1="40" x2="40" y2="560" stroke="#000"/>
+            <g id="house-1" transform="translate(300,95)"></g>
+            <g id="house-2" transform="translate(440,120)"></g>
+            <g id="house-3" transform="translate(505,210)"></g>
+            <g id="house-4" transform="translate(535,300)"></g>
+            <g id="house-5" transform="translate(505,390)"></g>
+            <g id="house-6" transform="translate(440,480)"></g>
+            <g id="house-7" transform="translate(300,505)"></g>
+            <g id="house-8" transform="translate(160,480)"></g>
+            <g id="house-9" transform="translate(95,390)"></g>
+            <g id="house-10" transform="translate(65,300)"></g>
+            <g id="house-11" transform="translate(95,210)"></g>
+            <g id="house-12" transform="translate(160,120)"></g>
+            <g id="aspectLayer"></g>
+          </svg>
         </div>
       </div>
     </section>
