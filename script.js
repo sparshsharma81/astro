@@ -35,7 +35,7 @@
       { id: "varjyam", name: "Varjyam", path: "varjyam", group: "panchang", default: false },
       { id: "ashtakoot", name: "Ashtakoot Score", path: "ashtakoot-score", group: "match-making", default: false },
       { id: "shadbala-summary", name: "Shad Bala Summary", path: "shadbala/summary", group: "shadbala", default: false },
-      { id: "shadbala-breakup", name: "Shad Bala Breakup", path: "shadbala/breakup", group: "shadbala", default: false },
+      { id: "shadbala-breakup", name: "Shad Bala Breakup", path: "shadbala/break-up", group: "shadbala", default: false },
       { id: "vim-maha", name: "Vimsottari Maha Dasas", path: "vimsottari/maha-dasas", group: "dasa", default: false },
       { id: "vim-maha-antar", name: "Vimsottari Maha + Antar Dasas", path: "vimsottari/dasa-information", group: "dasa", default: false }
     ];
@@ -137,6 +137,9 @@
       rawDataBox: document.getElementById("rawDataBox"),
       copyDataBtn: document.getElementById("copyDataBtn"),
       downloadDataBtn: document.getElementById("downloadDataBtn"),
+      chatPromptBox: document.getElementById("chatPromptBox"),
+      copyPromptBtn: document.getElementById("copyPromptBtn"),
+      copyForChatBtn: document.getElementById("copyForChatBtn"),
       planetCount: document.getElementById("planetCount"),
       houseCount: document.getElementById("houseCount"),
       strengthCount: document.getElementById("strengthCount"),
@@ -747,6 +750,88 @@
       } catch (e) {
         box.value = "{" + "}\n" + "Error serializing data";
       }
+      updatePromptBox();
+    }
+
+    function generateChatPrompt() {
+      const present = [];
+      if (state.d1) present.push('D1 (Rasi)');
+      if (state.d9) present.push('D9 (Navamsa)');
+      const divisionalIds = Object.keys(state.endpointOutputs || {}).filter(id => id.startsWith('d') && id !== 'd1' && id !== 'd9');
+      if (divisionalIds.length) present.push(`Divisional: ${divisionalIds.join(', ')}`);
+
+      const atma = state.summary?.atmakaraka || '-';
+      const planets = Object.keys(state.d1 || {}).length || 0;
+      const houses = countHouseCoverage(state.d1 || {});
+
+      const style = nodes.analysisStyle?.value || 'professional';
+
+      return 'You are an expert Vedic astrology analyst. Use only the data provided below to generate a clear, professional reading for a client.\n\n' +
+        'Charts included: ' + (present.length ? present.join('; ') : 'None (no chart data)') + '.\n' +
+        'Atmakaraka (if detected): ' + atma + '.\n' +
+        'Planets parsed: ' + planets + '. Houses occupied: ' + houses + '.\n' +
+        'Desired report style: ' + style + '.\n\n' +
+        'Instructions:\n' +
+        '- First, provide a 3-sentence executive summary suitable for a client.\n' +
+        '- Next, list key strengths and vulnerabilities (3 bullets each) based only on the provided placements and dignity signals.\n' +
+        '- Then give 6 concise, actionable recommendations the client can follow (health, career, relationships, timing, remedies).\n' +
+        '- After that, include a short paragraph that explains how you used D1 vs D9 to reach conclusions.\n' +
+        '- Finally, if information is missing or ambiguous (missing D1/D9), state what extra data you would need.\n\n' +
+        'Now analyze the JSON data that follows. Do not invent additional chart placements.';
+    }
+
+    function updatePromptBox() {
+      const box = nodes.chatPromptBox;
+      if (!box) return;
+      try {
+        box.value = generateChatPrompt();
+      } catch (e) {
+        box.value = 'Error generating prompt.';
+      }
+    }
+
+    async function copyPromptToClipboard() {
+      const box = nodes.chatPromptBox;
+      if (!box) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(box.value);
+        } else {
+          box.select();
+          document.execCommand('copy');
+        }
+        setStatus('Copied', 'Prompt copied to clipboard');
+      } catch (err) {
+        setStatus('Error', 'Unable to copy prompt');
+      }
+    }
+
+    async function copyPromptWithJson() {
+      const promptBox = nodes.chatPromptBox;
+      const rawBox = nodes.rawDataBox;
+      if (!promptBox || !rawBox) return;
+      try {
+        // Collapse prompt newlines to reduce line count but keep text
+        const compactPrompt = promptBox.value.replace(/\s*\n\s*/g, ' ').trim();
+        // Minify JSON to reduce lines/tokens
+        const snapshot = getRawDataSnapshot();
+        const minified = JSON.stringify(snapshot);
+        const combined = compactPrompt + '\n\n' + '```json\n' + minified + '\n```';
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(combined);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = combined;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        setStatus('Copied', 'Prompt + compact JSON copied to clipboard');
+      } catch (err) {
+        setStatus('Error', 'Unable to copy combined prompt');
+      }
     }
 
     async function copyRawDataToClipboard() {
@@ -908,6 +993,9 @@
         if (nodes.downloadDataBtn) nodes.downloadDataBtn.addEventListener('click', downloadRawData);
         // initial populate
         updateRawDataBox();
+        if (nodes.copyPromptBtn) nodes.copyPromptBtn.addEventListener('click', copyPromptToClipboard);
+        if (nodes.copyForChatBtn) nodes.copyForChatBtn.addEventListener('click', copyPromptWithJson);
+        updatePromptBox();
       } catch (e) {
         console.warn('Raw data controls not available at init:', e?.message || e);
       }

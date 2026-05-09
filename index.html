@@ -365,6 +365,22 @@
     <section class="panel">
       <div class="section-head">
         <div>
+          <h2>ChatGPT Prompt</h2>
+          <div class="sub">A ready-made prompt to paste into ChatGPT. Edit if you want a different instruction tone.</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="copyPromptBtn" type="button">Copy Prompt</button>
+          <button class="btn btn-primary" id="copyForChatBtn" type="button">Copy Prompt + JSON</button>
+        </div>
+      </div>
+      <div class="card">
+        <textarea id="chatPromptBox" spellcheck="false" style="min-height:140px; width:100%; padding:12px; font-size:13px; line-height:1.45;"></textarea>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
           <h2>Raw Chart Data</h2>
           <div class="sub">All collected chart JSON is shown here for quick copy or download.</div>
         </div>
