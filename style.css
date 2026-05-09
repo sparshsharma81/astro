@@ -685,3 +685,25 @@
       .queue-summary { grid-template-columns: 1fr; }
       .chart-grid { grid-template-columns: 1fr; }
     }
+
+    /* Toasts */
+    #toastContainer { display:flex; flex-direction:column; gap:10px; }
+    .toast-card {
+      min-width: 240px;
+      max-width: 420px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(10,20,36,0.95), rgba(6,12,22,0.96));
+      border: 1px solid rgba(125,211,252,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      color: var(--text);
+      transition: opacity 360ms ease, transform 220ms ease;
+      opacity: 1;
+    }
+    .toast-card:focus { outline: none; box-shadow: 0 0 0 4px rgba(125,211,252,0.08); }
+
+    /* Accessibility: stronger focus styles for interactive elements */
+    button:focus, input:focus, select:focus, textarea:focus {
+      box-shadow: 0 0 0 4px rgba(125,211,252,0.12);
+      outline: none;
+    }

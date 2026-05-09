@@ -224,7 +224,7 @@
       font-weight: 500;
     }
     
-    .planet-detail value {
+    .planet-detail .planet-value {
       color: #e0e0e0;
     }
     
@@ -805,19 +805,19 @@
           <div class="planet-name">${planet}</div>
           <div class="planet-detail">
             <label>House:</label>
-            <value>${house}</value>
+            <div class="planet-value">${house}</div>
           </div>
           <div class="planet-detail">
             <label>Sign:</label>
-            <value>${sign}</value>
+            <div class="planet-value">${sign}</div>
           </div>
           <div class="planet-detail">
             <label>Degree:</label>
-            <value>${degreeStr}</value>
+            <div class="planet-value">${degreeStr}</div>
           </div>
           <div class="planet-detail">
             <label>Speed:</label>
-            <value>${speedStr}</value>
+            <div class="planet-value">${speedStr}</div>
           </div>
           <div class="planet-detail">
             <label>Dignity:</label>
@@ -825,7 +825,7 @@
           </div>
           <div class="planet-detail">
             <label>Retrograde:</label>
-            <value>${retrograde ? 'Yes ℜ' : 'No'}</value>
+            <div class="planet-value">${retrograde ? 'Yes ℜ' : 'No'}</div>
           </div>
         `;
         

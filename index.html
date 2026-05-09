@@ -387,12 +387,26 @@
         <div class="actions">
           <button class="btn btn-secondary" id="copyDataBtn" type="button">Copy JSON</button>
           <button class="btn btn-primary" id="downloadDataBtn" type="button">Download JSON</button>
-        </div>
+          <div style="display:flex; align-items:center; gap:10px; margin-left:10px;">
+            <label style="display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted);">
+              <input id="includeSensitiveToggle" type="checkbox" style="width:16px; height:16px;" />
+              Include sensitive keys
+            </label>
+            <label style="display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted);">
+              Format:
+              <select id="copyJsonFormat" style="margin-left:6px; padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.03); color:var(--text);">
+                <option value="compact">Compact (recommended)</option>
+                <option value="pretty">Pretty (readable)</option>
+              </select>
+            </label>
+          </div>
       </div>
       <div class="card">
         <textarea id="rawDataBox" spellcheck="false" readonly style="min-height:140px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size:12px; line-height:1.5; width:100%; padding:12px; background:rgba(4,10,22,0.85);"></textarea>
       </div>
     </section>
+
+    <div id="toastContainer" aria-live="polite" aria-atomic="true" style="position:fixed; right:18px; bottom:18px; z-index:9999;"></div>
 
 
 </body>

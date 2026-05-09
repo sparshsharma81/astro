@@ -23,19 +23,21 @@
       { id: "d40", name: "D40 Chart Info", path: "d40-chart-info", group: "divisional", default: false },
       { id: "d45", name: "D45 Chart Info", path: "d45-chart-info", group: "divisional", default: false },
       { id: "d60", name: "D60 Chart Info", path: "d60-chart-info", group: "divisional", default: false },
-      { id: "sunrise", name: "Sun Rise and Sun Set", path: "sunrise-sunset", group: "panchang", default: false },
-      { id: "tithi", name: "Tithi Timings", path: "tithi-timings", group: "panchang", default: false },
+      { id: "sunrise", name: "Sun Rise and Sun Set", path: "getsunriseandset", group: "panchang", default: false },
+      { id: "tithi", name: "Tithi Timings", path: "tithi-durations", group: "panchang", default: false },
       { id: "nakshatra", name: "Nakshatra Durations", path: "nakshatra-durations", group: "panchang", default: false },
-      { id: "yoga", name: "Yoga Timings", path: "yoga-timings", group: "panchang", default: false },
-      { id: "karana", name: "Karana Timings", path: "karana-timings", group: "panchang", default: false },
+      { id: "yoga", name: "Yoga Timings", path: "yoga-durations", group: "panchang", default: false },
+      { id: "karana", name: "Karana Timings", path: "karana-durations", group: "panchang", default: false },
       { id: "rahukalam", name: "Rahu Kalam", path: "rahu-kalam", group: "panchang", default: false },
       { id: "yamagandam", name: "Yama Gandam", path: "yama-gandam", group: "panchang", default: false },
       { id: "gulika", name: "Gulika Kalam", path: "gulika-kalam", group: "panchang", default: false },
       { id: "durmuhurat", name: "Dur Muhurat", path: "dur-muhurat", group: "panchang", default: false },
       { id: "varjyam", name: "Varjyam", path: "varjyam", group: "panchang", default: false },
-      { id: "ashtakoot", name: "Ashtakoot Score", path: "ashtakoot-score", group: "match-making", default: false },
+      { id: "ashtakoot", name: "Ashtakoot Score", path: "match-making/ashtakoot-score", group: "match-making", default: false },
       { id: "shadbala-summary", name: "Shad Bala Summary", path: "shadbala/summary", group: "shadbala", default: false },
       { id: "shadbala-breakup", name: "Shad Bala Breakup", path: "shadbala/break-up", group: "shadbala", default: false },
+      { id: "naisargika-bala", name: "Naisargika Bala (Shadbala)", path: "shadbala/naisargika-bala", group: "shadbala", default: false },
+      { id: "drig-bala", name: "Drig Bala (Shadbala)", path: "shadbala/drig-bala", group: "shadbala", default: false },
       { id: "vim-maha", name: "Vimsottari Maha Dasas", path: "vimsottari/maha-dasas", group: "dasa", default: false },
       { id: "vim-maha-antar", name: "Vimsottari Maha + Antar Dasas", path: "vimsottari/dasa-information", group: "dasa", default: false }
     ];
@@ -135,6 +137,9 @@
       analysisOutput: document.getElementById("analysisOutput"),
       analysisBar: document.getElementById("analysisBar"),
       rawDataBox: document.getElementById("rawDataBox"),
+      includeSensitiveToggle: document.getElementById("includeSensitiveToggle"),
+      copyJsonFormat: document.getElementById("copyJsonFormat"),
+      toastContainer: document.getElementById("toastContainer"),
       copyDataBtn: document.getElementById("copyDataBtn"),
       downloadDataBtn: document.getElementById("downloadDataBtn"),
       chatPromptBox: document.getElementById("chatPromptBox"),
@@ -145,6 +150,44 @@
       strengthCount: document.getElementById("strengthCount"),
       karakaName: document.getElementById("karakaName")
     };
+
+    // Helper: shallow key match for secrets
+    const SECRET_KEY_RE = /(key|token|secret|password|api|astrok|astrokey|gemini|opencage|private)_?/i;
+
+    function maskSecrets(obj) {
+      const seen = new WeakSet();
+      function _mask(value, key) {
+        if (value && typeof value === 'object') {
+          if (seen.has(value)) return value;
+          seen.add(value);
+          if (Array.isArray(value)) return value.map(v => _mask(v));
+          const out = {};
+          Object.keys(value).forEach(k => {
+            try {
+              if (SECRET_KEY_RE.test(k)) {
+                out[k] = '***MASKED***';
+              } else {
+                out[k] = _mask(value[k], k);
+              }
+            } catch (e) {
+              out[k] = '***ERROR***';
+            }
+          });
+          return out;
+        }
+        // mask raw-looking keys in strings only when key matches
+        if (typeof value === 'string') {
+          // a heuristic: long alphanumeric tokens
+          if ((value.length > 20 && /[A-Za-z0-9_\-]{12,}/.test(value))) return '***MASKED***';
+        }
+        return value;
+      }
+      try {
+        return _mask(obj);
+      } catch (e) {
+        return obj;
+      }
+    }
 
     function parseConfig() {
       try {
@@ -520,7 +563,7 @@
     }
 
     function renderShadbala(queueState) {
-      const shabdalaIds = ["shadbala-summary", "shadbala-breakup"];
+      const shabdalaIds = ["shadbala-summary", "shadbala-breakup", "naisargika-bala", "drig-bala"];
       const entries = shabdalaIds.map(id => {
         const endpoint = API_CATALOG.find(e => e.id === id);
         const status = queueState[id] || "queued";
@@ -623,6 +666,52 @@
       return best;
     }
 
+    // Compute basic Bala metrics (heuristic placeholders) for display
+    function computeBalaSummary(d1) {
+      const balas = {};
+      const defaultNaisargika = {
+        Sun: 60, Moon: 55, Mars: 75, Mercury: 55, Jupiter: 80, Venus: 70, Saturn: 65
+      };
+
+      Object.keys(d1 || {}).forEach(planet => {
+        const item = d1[planet] || {};
+        const deg = safeNumber(item.degrees, 0);
+        const house = safeNumber(item.house_number, 0);
+        const isRetro = String(item.isRetro) === "true";
+
+        const Sthana = Math.min(100, Math.round(50 + (deg / 30) * 50));
+        const Kaala = isRetro ? 40 : 70; // simple time-motion heuristic
+        const Dig = house >= 1 && house <= 12 ? Math.max(10, Math.round(((13 - house) / 12) * 100)) : 50;
+        const Cheshta = isRetro ? 70 : 55; // motion/activity
+        // Drig: use dignity to approximate aspect/visibility strength
+        const sign = item.zodiac_sign_name || item.sign || "-";
+        const dignityLabel = getPlanetStrengthLabel(planet, sign).label;
+        const Drig = dignityLabel === 'Exalted' ? 90 : dignityLabel === 'Debilitated' ? 25 : 55;
+        const Naisargika = defaultNaisargika[planet] ?? 50;
+
+        balas[planet] = {
+          SthanaBala: Sthana,
+          KaalaBala: Kaala,
+          DigBala: Dig,
+          CheshtaBala: Cheshta,
+          DrigBala: Drig,
+          NaisargikaBala: Naisargika
+        };
+      });
+
+      // Also produce an overall summary object averaging across planets
+      const planets = Object.keys(balas);
+      const overall = {};
+      if (planets.length) {
+        ['SthanaBala','KaalaBala','DigBala','CheshtaBala','DrigBala','NaisargikaBala'].forEach(key => {
+          const sum = planets.reduce((s,p) => s + (balas[p][key] || 0), 0);
+          overall[key] = Math.round(sum / planets.length);
+        });
+      }
+
+      return { perPlanet: balas, overall };
+    }
+
     function buildHouseRows(d1) {
       const rows = [];
       const occupantsByHouse = {};
@@ -688,17 +777,35 @@
         });
       });
 
-      nodes.strengthGrid.innerHTML = cards.map(card => `
-        <div class="card">
-          <h4>${card.planet}</h4>
-          <div class="tiny muted" style="margin-bottom: 10px;">Sign: <b>${card.sign}</b> | Lord: <b>${card.signData.lord}</b></div>
-          <div class="tag ${card.strength.tone}">${card.strength.label}</div>
-          <div class="tiny muted" style="margin-top: 10px;">Exalted in <b>${dignity[card.planet]?.exalted || "-"}</b></div>
-          <div class="tiny muted">Debilitated in <b>${dignity[card.planet]?.debilitated || "-"}</b></div>
-          <div class="tiny muted">Friends: ${card.relation.friends.join(", ") || "-"}</div>
-          <div class="tiny muted">Enemies: ${card.relation.enemies.join(", ") || "-"}</div>
-        </div>
-      `).join("");
+      nodes.strengthGrid.innerHTML = cards.map(card => {
+        const bala = (state.summary?.balas?.perPlanet || {})[card.planet] || null;
+        const balaHtml = bala ? `
+            <div style="margin-top:10px;">
+              <div class="tiny muted">Bala scores:</div>
+              <div class="tiny" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                <span class="tag info">Sthana:${bala.SthanaBala}</span>
+                <span class="tag">Kaala:${bala.KaalaBala}</span>
+                <span class="tag">Dig:${bala.DigBala}</span>
+                <span class="tag">Cheshta:${bala.CheshtaBala}</span>
+                <span class="tag">Drig:${bala.DrigBala}</span>
+                <span class="tag">Naisargika:${bala.NaisargikaBala}</span>
+              </div>
+            </div>
+          ` : '';
+
+        return `
+          <div class="card">
+            <h4>${card.planet}</h4>
+            <div class="tiny muted" style="margin-bottom: 10px;">Sign: <b>${card.sign}</b> | Lord: <b>${card.signData.lord}</b></div>
+            <div class="tag ${card.strength.tone}">${card.strength.label}</div>
+            <div class="tiny muted" style="margin-top: 10px;">Exalted in <b>${dignity[card.planet]?.exalted || "-"}</b></div>
+            <div class="tiny muted">Debilitated in <b>${dignity[card.planet]?.debilitated || "-"}</b></div>
+            <div class="tiny muted">Friends: ${card.relation.friends.join(", ") || "-"}</div>
+            <div class="tiny muted">Enemies: ${card.relation.enemies.join(", ") || "-"}</div>
+            ${balaHtml}
+          </div>
+        `;
+      }).join("");
     }
 
     function updateSummary(d1, d9) {
@@ -706,6 +813,8 @@
       state.summary.atmakaraka = atma.planet;
       state.summary.atmakarakaSign = atma.sign;
       state.summary.atmakarakaElement = signInfo(atma.sign).element;
+      // compute Bala metrics
+      state.summary.balas = computeBalaSummary(d1 || {});
       const houses = countHouseCoverage(d1);
       const planets = Object.keys(d1 || {}).length;
       const strengths = Object.entries(d1 || {}).filter(([planet, data]) => getPlanetStrengthLabel(planet, data.zodiac_sign_name || data.sign || "-").label !== "Normal").length;
@@ -741,12 +850,15 @@
         analysis: state.analysis
       };
     }
-
     function updateRawDataBox() {
       const box = nodes.rawDataBox;
       if (!box) return;
       try {
-        box.value = JSON.stringify(getRawDataSnapshot(), null, 2);
+        // show pretty / masked by default in UI
+        const snapshot = getRawDataSnapshot();
+        const includeSensitive = nodes.includeSensitiveToggle && nodes.includeSensitiveToggle.checked;
+        const visible = includeSensitive ? snapshot : maskSecrets(snapshot);
+        box.value = JSON.stringify(visible, null, 2);
       } catch (e) {
         box.value = "{" + "}\n" + "Error serializing data";
       }
@@ -813,10 +925,12 @@
       try {
         // Collapse prompt newlines to reduce line count but keep text
         const compactPrompt = promptBox.value.replace(/\s*\n\s*/g, ' ').trim();
-        // Minify JSON to reduce lines/tokens
+        const includeSensitive = nodes.includeSensitiveToggle && nodes.includeSensitiveToggle.checked;
+        const format = nodes.copyJsonFormat ? nodes.copyJsonFormat.value : 'compact';
         const snapshot = getRawDataSnapshot();
-        const minified = JSON.stringify(snapshot);
-        const combined = compactPrompt + '\n\n' + '```json\n' + minified + '\n```';
+        const toExport = includeSensitive ? snapshot : maskSecrets(snapshot);
+        const jsonPart = format === 'pretty' ? JSON.stringify(toExport, null, 2) : JSON.stringify(toExport);
+        const combined = compactPrompt + '\n\n' + '```json\n' + jsonPart + '\n```';
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(combined);
@@ -828,7 +942,7 @@
           document.execCommand('copy');
           ta.remove();
         }
-        setStatus('Copied', 'Prompt + compact JSON copied to clipboard');
+        setStatus('Copied', 'Prompt + JSON copied to clipboard');
       } catch (err) {
         setStatus('Error', 'Unable to copy combined prompt');
       }
@@ -838,11 +952,20 @@
       const box = nodes.rawDataBox;
       if (!box) return;
       try {
+        const includeSensitive = nodes.includeSensitiveToggle && nodes.includeSensitiveToggle.checked;
+        const format = nodes.copyJsonFormat ? nodes.copyJsonFormat.value : 'compact';
+        const snapshot = getRawDataSnapshot();
+        const toExport = includeSensitive ? snapshot : maskSecrets(snapshot);
+        const out = format === 'pretty' ? JSON.stringify(toExport, null, 2) : JSON.stringify(toExport);
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(box.value);
+          await navigator.clipboard.writeText(out);
         } else {
-          box.select();
+          const ta = document.createElement('textarea');
+          ta.value = out;
+          document.body.appendChild(ta);
+          ta.select();
           document.execCommand('copy');
+          ta.remove();
         }
         setStatus('Copied', 'Raw JSON copied to clipboard');
       } catch (err) {
@@ -851,9 +974,12 @@
     }
 
     function downloadRawData() {
-      const box = nodes.rawDataBox;
-      if (!box) return;
-      const blob = new Blob([box.value], { type: 'application/json' });
+      const snapshot = getRawDataSnapshot();
+      const includeSensitive = nodes.includeSensitiveToggle && nodes.includeSensitiveToggle.checked;
+      const format = nodes.copyJsonFormat ? nodes.copyJsonFormat.value : 'compact';
+      const toExport = includeSensitive ? snapshot : maskSecrets(snapshot);
+      const out = format === 'pretty' ? JSON.stringify(toExport, null, 2) : JSON.stringify(toExport);
+      const blob = new Blob([out], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -944,8 +1070,26 @@
     }
 
     function setStatus(mode, text) {
-      nodes.modePill.textContent = mode;
-      nodes.statusText.textContent = text;
+      try {
+        nodes.modePill.textContent = mode;
+        nodes.statusText.textContent = text;
+      } catch (e) {}
+      // show transient toast
+      try { showToast(mode, text); } catch (e) {}
+    }
+
+    function showToast(title, message, ms = 3200) {
+      const container = nodes.toastContainer || document.getElementById('toastContainer');
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = 'toast-card';
+      el.setAttribute('role', 'status');
+      el.innerHTML = `<strong style="display:block; font-size:13px; margin-bottom:6px;">${escapeHtml(String(title))}</strong><div style="font-size:13px; color:var(--muted);">${escapeHtml(String(message))}</div>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 400);
+      }, ms);
     }
 
     // Save astro data to sessionStorage for divisional charts page
