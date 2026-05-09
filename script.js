@@ -134,6 +134,9 @@
       failedCount: document.getElementById("failedCount"),
       analysisOutput: document.getElementById("analysisOutput"),
       analysisBar: document.getElementById("analysisBar"),
+      rawDataBox: document.getElementById("rawDataBox"),
+      copyDataBtn: document.getElementById("copyDataBtn"),
+      downloadDataBtn: document.getElementById("downloadDataBtn"),
       planetCount: document.getElementById("planetCount"),
       houseCount: document.getElementById("houseCount"),
       strengthCount: document.getElementById("strengthCount"),
@@ -356,6 +359,7 @@
           </div>
         `;
       }).join("");
+      updateRawDataBox();
     }
 
     function escapeHtml(text) {
@@ -713,6 +717,67 @@
       buildStrengthGrid(d1);
       renderKundliChart(d1);
       nodes.analysisBar.style.setProperty("--w", `${Math.min(100, 25 + planets * 9)}%`);
+      updateRawDataBox();
+    }
+
+    function getRawDataSnapshot() {
+      const profile = {
+        name: nodes.name?.value || "",
+        dob: nodes.dob?.value || "",
+        tob: nodes.tob?.value || "",
+        location: nodes.location?.value || "",
+        timezone: nodes.timezone?.value || "",
+        analysisStyle: nodes.analysisStyle?.value || ""
+      };
+      return {
+        profile,
+        d1: state.d1,
+        d9: state.d9,
+        endpoints: state.endpointOutputs,
+        summary: state.summary,
+        analysis: state.analysis
+      };
+    }
+
+    function updateRawDataBox() {
+      const box = nodes.rawDataBox;
+      if (!box) return;
+      try {
+        box.value = JSON.stringify(getRawDataSnapshot(), null, 2);
+      } catch (e) {
+        box.value = "{" + "}\n" + "Error serializing data";
+      }
+    }
+
+    async function copyRawDataToClipboard() {
+      const box = nodes.rawDataBox;
+      if (!box) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(box.value);
+        } else {
+          box.select();
+          document.execCommand('copy');
+        }
+        setStatus('Copied', 'Raw JSON copied to clipboard');
+      } catch (err) {
+        setStatus('Error', 'Unable to copy to clipboard');
+      }
+    }
+
+    function downloadRawData() {
+      const box = nodes.rawDataBox;
+      if (!box) return;
+      const blob = new Blob([box.value], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chart-data-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus('Downloaded', 'Raw JSON downloaded');
     }
 
     function buildDemoCharts() {
@@ -836,6 +901,16 @@
         return false;
       }
     }
+
+      // Attach copy/download handlers for raw data box
+      try {
+        if (nodes.copyDataBtn) nodes.copyDataBtn.addEventListener('click', copyRawDataToClipboard);
+        if (nodes.downloadDataBtn) nodes.downloadDataBtn.addEventListener('click', downloadRawData);
+        // initial populate
+        updateRawDataBox();
+      } catch (e) {
+        console.warn('Raw data controls not available at init:', e?.message || e);
+      }
 
     /* ========== KUNDLI VISUALIZATION ENGINE ========== */
 
