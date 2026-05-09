@@ -191,9 +191,48 @@
 
     function parseConfig() {
       try {
-        return { data: JSON.parse(nodes.config.value || "{}"), error: null };
+        const local = JSON.parse(nodes.config.value || "{}");
+        const env = getEnvConfig();
+        // Environment overrides local config when present (convenient for deployments)
+        return { data: { ...local, ...env }, error: null };
       } catch (error) {
         return { data: {}, error: error };
+      }
+    }
+
+    // Read runtime-injected environment variables exposed as window.__ENV
+    // Deployments on Render/Vercel can generate /env.js which sets window.__ENV = { ... }
+    function getEnvConfig() {
+      try {
+        const env = window.__ENV || {};
+        if (!env || typeof env !== 'object') return {};
+        const out = {};
+        let autoIndex = 1;
+        for (const k of Object.keys(env)) {
+          const raw = env[k];
+          if (raw == null) continue;
+          const lk = String(k).toLowerCase();
+          const v = String(raw);
+          if (lk.includes('opencage')) out.opencageKey = v;
+          else if (lk.includes('gemini')) out.geminiKey = v;
+          else if (lk.includes('model')) out.modelName = v;
+          else if (/astro.*\d+/.test(lk)) {
+            const m = lk.match(/(\d+)/);
+            const idx = m ? m[1] : autoIndex++;
+            out[`astroKey${idx}`] = v;
+          } else if (lk.includes('astrokey') || lk === 'astro_key' || lk === 'astro') {
+            out[`astroKey${autoIndex++}`] = v;
+          } else if (lk.includes('api') && lk.includes('key')) {
+            // generic api key fallback
+            out[`astroKey${autoIndex++}`] = v;
+          } else {
+            // pass-through: add lowercased key as-is
+            out[k] = v;
+          }
+        }
+        return out;
+      } catch (e) {
+        return {};
       }
     }
 
@@ -1461,11 +1500,8 @@
 
     async function generateGeminiNarrative(profile, d1, d9, endpointOutputs = {}) {
       const config = parseConfig().data;
-      const key = normalizeKey(config.geminiKey);
+      const clientKey = normalizeKey(config.geminiKey);
       const modelName = normalizeKey(config.modelName, "gemini-2.0-flash");
-      if (!key) {
-        return generateFallbackReport(d1, d9, profile);
-      }
 
       const apiDataForAnalysis = Object.entries(endpointOutputs)
         .filter(([, result]) => result?.ok)
@@ -1474,54 +1510,36 @@
           return acc;
         }, {});
 
-      const prompt = `
-You are a senior Vedic astrologer. Write a highly professional astrology report in Hindi written using English letters only.
-Style: ${profile.analysisStyle}.
-Name: ${profile.name}
-Date of Birth: ${profile.dob}
-Time of Birth: ${profile.tob}
-Location: ${profile.location}
-Timezone: ${profile.timezone}
+      const prompt = `You are a senior Vedic astrologer. Write a highly professional astrology report in Hindi written using English letters only.\nStyle: ${profile.analysisStyle}.\nName: ${profile.name}\nDate of Birth: ${profile.dob}\nTime of Birth: ${profile.tob}\nLocation: ${profile.location}\nTimezone: ${profile.timezone}\n\nUse the following chart data to explain:\n- D1 / Rasi chart\n- D9 / Navamsa chart\n- All additional astrology endpoint outputs for deeper planetary combinations and timing layers\n- house-wise meaning\n- planet-by-planet meaning\n- exaltation, debilitation, friend sign, enemy sign\n- element analysis, movable/fixed/dual signs\n- nature, thinking, love life, married life, career, health\n- atmakaraka and soul direction\n\nD1 Data:\n${JSON.stringify(d1, null, 2)}\n\nD9 Data:\n${JSON.stringify(d9, null, 2)}\n\nAdditional Astrology API Data (selected endpoints):\n${JSON.stringify(apiDataForAnalysis, null, 2)}\n\nRules:\n1. Be precise and professional.\n2. Write in English letters but use Hindi wording.\n3. Give a deep, structured, consultant-style reading.\n4. Cover each house and every visible planet.\n5. If some information is missing, explain what can and cannot be inferred.\n6. Do not mention that this is an AI prompt.\n7. Explain patient planetary combinations clearly: conjunctions, house activation, dignity, and combined impact on love, marriage, career, health, and mindset.\n`;
 
-Use the following chart data to explain:
-- D1 / Rasi chart
-- D9 / Navamsa chart
-- All additional astrology endpoint outputs for deeper planetary combinations and timing layers
-- house-wise meaning
-- planet-by-planet meaning
-- exaltation, debilitation, friend sign, enemy sign
-- element analysis, movable/fixed/dual signs
-- nature, thinking, love life, married life, career, health
-- atmakaraka and soul direction
+      // If client-side key exists, call Google directly (note: exposes key to client)
+      if (clientKey) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(clientKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (!response.ok) throw new Error(`Gemini error: ${response.status}`);
+        const data = await response.json();
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || generateFallbackReport(d1, d9, profile);
+      }
 
-D1 Data:
-${JSON.stringify(d1, null, 2)}
+      // Otherwise, attempt to use a server-side proxy at /api/gemini (recommended for secret keys)
+      try {
+        const proxyResp = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, modelName })
+        });
+        if (!proxyResp.ok) throw new Error(`Proxy error: ${proxyResp.status}`);
+        const json = await proxyResp.json();
+        if (json && json.text) return json.text;
+      } catch (e) {
+        // fallback to local report if proxy fails
+        console.warn('Gemini proxy failed:', e?.message || e);
+      }
 
-D9 Data:
-${JSON.stringify(d9, null, 2)}
-
-Additional Astrology API Data (selected endpoints):
-${JSON.stringify(apiDataForAnalysis, null, 2)}
-
-Rules:
-1. Be precise and professional.
-2. Write in English letters but use Hindi wording.
-3. Give a deep, structured, consultant-style reading.
-4. Cover each house and every visible planet.
-5. If some information is missing, explain what can and cannot be inferred.
-6. Do not mention that this is an AI prompt.
-7. Explain patient planetary combinations clearly: conjunctions, house activation, dignity, and combined impact on love, marriage, career, health, and mindset.
-`;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(key)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-
-      if (!response.ok) throw new Error(`Gemini error: ${response.status}`);
-      const data = await response.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text || generateFallbackReport(d1, d9, profile);
+      return generateFallbackReport(d1, d9, profile);
     }
 
     function setLoading(loading) {

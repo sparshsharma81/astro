@@ -1,0 +1,15 @@
+{
+  "name": "astro-scope",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "write-env": "node scripts/write-env.js",
+    "build": "npm run write-env && echo \"No build step required for static site.\"",
+    "serve": "npx http-server -c-1 ./ -p 3000",
+    "start": "node server.js",
+    "start-server": "node server.js"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

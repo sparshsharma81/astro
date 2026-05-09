@@ -8,7 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-   <script src="script.js" defer></script>
+    <!-- Optional: at deploy time create /env.js that sets window.__ENV = { opencageKey: '...', astroKey1:'...', geminiKey:'...' } -->
+    <script src="/env.js" defer onerror="/* env.js not present — no env variables loaded */"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -145,6 +147,7 @@
   "astroKey12": "uUBhnrozy54YUU1btXf6k8MtAep1ZleE8FIvPTMS",
   "geminiKey": "AIzaSyCl5o1mjs0o27tRD8_h0HCwLgdjdF34bBQ",
   "modelName": "gemini-2.0-flash"
+  
 }</textarea>
         </div>
       </div>
