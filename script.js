@@ -12,7 +12,7 @@
       { id: "d6", name: "D6 Chart Info", path: "d6-chart-info", group: "divisional", default: false },
       { id: "d7", name: "D7 Chart Info", path: "d7-chart-info", group: "divisional", default: false },
       { id: "d8", name: "D8 Chart Info", path: "d8-chart-info", group: "divisional", default: false },
-      { id: "d10", name: "D10 Chart Info", path: "d10-chart-info", group: "divisional", default: false },
+      { id: "d10", name: "D10 Chart Info", path: "d10-chart-info", group: "divisional", default: true },
       { id: "d11", name: "D11 Chart Info", path: "d11-chart-info", group: "divisional", default: false },
       { id: "d12", name: "D12 Chart Info", path: "d12-chart-info", group: "divisional", default: false },
       { id: "d16", name: "D16 Chart Info", path: "d16-chart-info", group: "divisional", default: false },
@@ -83,6 +83,10 @@
     const state = {
       d1: null,
       d9: null,
+      d10: null,
+      d2: null,
+      d24: null,
+      d60: null,
       analysis: "",
       summary: {},
       endpointOutputs: {},
@@ -92,6 +96,30 @@
         selected: null
       }
     };
+
+    const appRoot = globalThis;
+
+    appRoot.state = state;
+    appRoot.__ASTRO_STATE__ = state;
+
+    function syncAstroState() {
+      appRoot.state = state;
+      appRoot.__ASTRO_STATE__ = state;
+    }
+
+    function refreshCareerEnginePanel() {
+      if (!appRoot.CareerEngine || typeof appRoot.CareerEngine.render !== "function") return;
+      const targetId = document.getElementById("careerOutput") ? "careerOutput" : "analysisOutput";
+      try {
+        const result = appRoot.CareerEngine.evaluateFromState ? appRoot.CareerEngine.evaluateFromState() : appRoot.CareerEngine.evaluate(state.d1 || {}, { d9: state.d9 || null, d10: state.d10 || null, d2: state.d2 || null, d24: state.d24 || null, d60: state.d60 || null });
+        appRoot.CareerEngine.render(result, targetId);
+      } catch (error) {
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.innerHTML = `<div class="card tiny muted">Career engine could not run: ${escapeHtml(error.message)}</div>`;
+        }
+      }
+    }
 
     const REQUEST_FLOW = {
       maxAttempts: 3,
@@ -1597,7 +1625,12 @@ Rules:
 
         state.d1 = charts.d1 || {};
         state.d9 = charts.d9 || {};
+        state.d10 = charts.d10 || charts.endpointOutputs?.d10?.data || charts.endpointOutputs?.d10 || null;
+        state.d2 = charts.d2 || charts.endpointOutputs?.d2?.data || charts.endpointOutputs?.d2 || null;
+        state.d24 = charts.d24 || charts.endpointOutputs?.d24?.data || charts.endpointOutputs?.d24 || null;
+        state.d60 = charts.d60 || charts.endpointOutputs?.d60?.data || charts.endpointOutputs?.d60 || null;
         state.endpointOutputs = charts.endpointOutputs || {};
+        syncAstroState();
 
         renderD1(state.d1);
         renderD9(state.d9);
@@ -1618,6 +1651,7 @@ Rules:
         const report = await generateGeminiNarrative(profile, state.d1, state.d9, state.endpointOutputs);
         state.analysis = report;
         nodes.analysisOutput.textContent = report;
+        refreshCareerEnginePanel();
 
         const live = !demo && normalizeKey(parseConfig().data.geminiKey);
         const okCount = Object.values(state.endpointOutputs).filter(item => item.ok).length;
@@ -1633,6 +1667,7 @@ Rules:
           : "Live astrology response incomplete. D1 and D9 are mandatory before analysis. Please retry after a moment or reduce selected endpoints.";
         state.analysis = fallback;
         nodes.analysisOutput.textContent = `Error during live generation: ${error.message}\n\n${fallback}`;
+        refreshCareerEnginePanel();
         setStatus("Recovered with fallback", error.message);
       } finally {
         setLoading(false);

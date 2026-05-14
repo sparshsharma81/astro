@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-   <script src="script.js" defer></script>
+    <script src="script.js" defer></script>
+    <script src="career_engine.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -192,42 +193,139 @@
       </div>
     </section>
 
-    <section class="panel">
-      <div class="section-head">
-        <div>
-          <h2>Kundli Visualization</h2>
-          <div class="sub">Interactive birth chart showing planets, houses, and planetary aspects. Click any planet to highlight its aspects.</div>
-        </div>
+  <section class="panel">
+  <div class="section-head">
+    <div>
+      <h2>🪐 Professional Kundli Chart</h2>
+      <div class="sub">Interactive Vedic birth chart with planetary positions, house significations, and aspect lines. Click planets to see their aspects highlighted.</div>
+    </div>
+  </div>
+  
+  <!-- Professional Controls -->
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:center; margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+    <button class="btn btn-primary" id="kundliShowAllBtn" type="button">
+      <span>🌟</span> Show All Aspects
+    </button>
+    <button class="btn btn-secondary" id="kundliClearBtn" type="button">
+      <span>🧹</span> Clear Highlights
+    </button>
+    <button class="btn btn-accent" id="kundliToggleLabels" type="button">📋 Toggle House Labels</button>
+  </div>
+
+  <!-- Planet Buttons - Professional Grid -->
+  <div id="kundliPlanetButtons" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:24px; max-width:600px; margin:0 auto 24px;"></div>
+
+  <!-- Professional Chart Container -->
+  <div style="display:flex; justify-content:center; align-items:center; padding:24px; background:linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(20,20,40,0.8) 100%); border-radius:20px; border:2px solid rgba(255,255,255,0.1); backdrop-filter:blur(10px); margin:0 auto; max-width:520px; box-shadow:0 20px 40px rgba(0,0,0,0.3);">
+    <div class="kundli-chart-container">
+      <svg id="kundliSvg" viewBox="0 0 620 620" style="width:500px; height:500px; min-width:500px; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.4));">
+        <!-- Background Ring -->
+        <circle cx="310" cy="310" r="280" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+        
+        <!-- Main Diamond Border -->
+        <polygon points="310,50 570,310 310,570 50,310" fill="none" stroke="#0f0f23" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="310,60 560,310 310,560 60,310" fill="none" stroke="#16213e" stroke-width="8" stroke-linejoin="round"/>
+        
+        <!-- Diagonals -->
+        <line x1="50" y1="50" x2="570" y2="570" stroke="#0f3460" stroke-width="2"/>
+        <line x1="570" y1="50" x2="50" y2="570" stroke="#0f3460" stroke-width="2"/>
+        
+        <!-- House Groups with Professional Styling -->
+        <g id="house-1" class="house-group" transform="translate(310,95)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-2" class="house-group" transform="translate(440,120)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-3" class="house-group" transform="translate(505,210)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-4" class="house-group" transform="translate(535,310)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-5" class="house-group" transform="translate(505,410)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-6" class="house-group" transform="translate(440,485)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-7" class="house-group" transform="translate(310,515)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-8" class="house-group" transform="translate(180,485)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-9" class="house-group" transform="translate(115,410)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-10" class="house-group" transform="translate(85,310)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-11" class="house-group" transform="translate(115,210)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+        <g id="house-12" class="house-group" transform="translate(180,120)">
+          <rect x="-25" y="-25" width="50" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        </g>
+
+        <!-- House Number Labels -->
+        <g id="houseLabels" class="house-labels">
+          <text x="310" y="92" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">1</text>
+          <text x="440" y="117" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">2</text>
+          <text x="505" y="207" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">3</text>
+          <text x="535" y="307" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">4</text>
+          <text x="505" y="407" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">5</text>
+          <text x="440" y="482" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">6</text>
+          <text x="310" y="512" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">7</text>
+          <text x="180" y="482" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">8</text>
+          <text x="115" y="407" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">9</text>
+          <text x="85" y="307" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">10</text>
+          <text x="115" y="207" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">11</text>
+          <text x="180" y="117" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="600" filter="url(#glow)">12</text>
+        </g>
+
+        <!-- Aspect Layer -->
+        <g id="aspectLayer" class="aspect-layer"></g>
+
+        <!-- Glow Filter -->
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div style="margin-top:24px; text-align:center;">
+    <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; max-width:600px; margin:0 auto;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:16px; height:16px; border-radius:50%; background:#f7c948;"></div>
+        <span class="tiny">Sun</span>
       </div>
-      <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:center; margin-bottom:20px;">
-        <button class="btn btn-secondary" id="kundliShowAllBtn" type="button">Show All Aspects</button>
-        <button class="btn btn-secondary" id="kundliClearBtn" type="button">Clear Highlights</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:16px; height:16px; border-radius:50%; background:#a5d8ff;"></div>
+        <span class="tiny">Moon</span>
       </div>
-      <div id="kundliPlanetButtons" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px;"></div>
-      <div style="display:flex; justify-content:center; overflow-x:auto;">
-        <div class="kundli-chart">
-          <svg viewBox="0 0 600 600" style="width:480px; height:480px; min-width:480px;">
-            <rect x="40" y="40" width="520" height="520" fill="#fff" stroke="#000"/>
-            <polygon points="300,40 560,300 300,560 40,300" fill="none" stroke="#000"/>
-            <line x1="40" y1="40" x2="560" y2="560" stroke="#000"/>
-            <line x1="560" y1="40" x2="40" y2="560" stroke="#000"/>
-            <g id="house-1" transform="translate(300,95)"></g>
-            <g id="house-2" transform="translate(440,120)"></g>
-            <g id="house-3" transform="translate(505,210)"></g>
-            <g id="house-4" transform="translate(535,300)"></g>
-            <g id="house-5" transform="translate(505,390)"></g>
-            <g id="house-6" transform="translate(440,480)"></g>
-            <g id="house-7" transform="translate(300,505)"></g>
-            <g id="house-8" transform="translate(160,480)"></g>
-            <g id="house-9" transform="translate(95,390)"></g>
-            <g id="house-10" transform="translate(65,300)"></g>
-            <g id="house-11" transform="translate(95,210)"></g>
-            <g id="house-12" transform="translate(160,120)"></g>
-            <g id="aspectLayer"></g>
-          </svg>
-        </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:16px; height:16px; border-radius:50%; background:#ff6b6b;"></div>
+        <span class="tiny">Mars</span>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <section class="panel">
       <div class="section-head">
@@ -271,6 +369,21 @@
         </div>
       </div>
       <div class="grid-4" id="strengthGrid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Career Intelligence Engine</h2>
+          <div class="sub">Professional career-yoga detection with D1 promise, D10 execution, divisional validation, and ranked career clusters.</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="runCareerBtn" type="button">Run Career Engine</button>
+        </div>
+      </div>
+      <div id="careerOutput" class="card tiny">
+        <div class="card tiny muted">Run the career engine after chart generation to see a structured professional report.</div>
+      </div>
     </section>
 
     <section class="panel">
