@@ -5,7 +5,7 @@
       { id: "planets", name: "Planets", path: "planets", group: "primitive", default: false },
       { id: "d1", name: "Planets Extended (D1)", path: "planets/extended", group: "core", default: true, required: true },
       { id: "d9", name: "Navamsa Chart Info (D9)", path: "navamsa-chart-info", group: "core", default: true, required: true },
-      { id: "d2", name: "D2 Chart Info", path: "d2-chart-info", group: "divisional", default: false },
+      { id: "d2", name: "D2 Chart Info", path: "d2-chart-info", group: "divisional", default: true },
       { id: "d3", name: "D3 Chart Info", path: "d3-chart-info", group: "divisional", default: false },
       { id: "d4", name: "D4 Chart Info", path: "d4-chart-info", group: "divisional", default: false },
       { id: "d5", name: "D5 Chart Info", path: "d5-chart-info", group: "divisional", default: false },
@@ -13,7 +13,7 @@
       { id: "d7", name: "D7 Chart Info", path: "d7-chart-info", group: "divisional", default: false },
       { id: "d8", name: "D8 Chart Info", path: "d8-chart-info", group: "divisional", default: false },
       { id: "d10", name: "D10 Chart Info", path: "d10-chart-info", group: "divisional", default: true },
-      { id: "d11", name: "D11 Chart Info", path: "d11-chart-info", group: "divisional", default: false },
+      { id: "d11", name: "D11 Chart Info", path: "d11-chart-info", group: "divisional", default: true },
       { id: "d12", name: "D12 Chart Info", path: "d12-chart-info", group: "divisional", default: false },
       { id: "d16", name: "D16 Chart Info", path: "d16-chart-info", group: "divisional", default: false },
       { id: "d20", name: "D20 Chart Info", path: "d20-chart-info", group: "divisional", default: false },
@@ -85,6 +85,7 @@
       d9: null,
       d10: null,
       d2: null,
+      d11: null,
       d24: null,
       d60: null,
       analysis: "",
@@ -117,6 +118,53 @@
         const target = document.getElementById(targetId);
         if (target) {
           target.innerHTML = `<div class="card tiny muted">Career engine could not run: ${escapeHtml(error.message)}</div>`;
+        }
+      }
+    }
+
+    function refreshWealthEnginePanel() {
+      if (!appRoot.WealthEngine || typeof appRoot.WealthEngine.render !== "function") return;
+      const targetId = document.getElementById("wealthOutput") ? "wealthOutput" : "analysisOutput";
+      try {
+        const result = appRoot.WealthEngine.evaluateFromState
+          ? appRoot.WealthEngine.evaluateFromState()
+          : appRoot.WealthEngine.evaluate(state.d1 || {}, {
+              d9: state.d9 || null,
+              d10: state.d10 || null,
+              d11: state.d11 || null,
+              d2: state.d2 || null,
+              d24: state.d24 || null,
+              d60: state.d60 || null
+            });
+        appRoot.WealthEngine.render(result, targetId);
+      } catch (error) {
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.innerHTML = `<div class="card tiny muted">Wealth engine could not run: ${escapeHtml(error.message)}</div>`;
+        }
+      }
+    }
+
+    function refreshTimingEnginePanel() {
+      if (!appRoot.TimingEngine || typeof appRoot.TimingEngine.render !== "function") return;
+      const targetId = document.getElementById("timingOutput") ? "timingOutput" : "analysisOutput";
+      try {
+        const result = appRoot.TimingEngine.evaluateFromState
+          ? appRoot.TimingEngine.evaluateFromState()
+          : appRoot.TimingEngine.evaluate(state.d1 || {}, {
+              d9: state.d9 || null,
+              d10: state.d10 || null,
+              d11: state.d11 || null,
+              d2: state.d2 || null,
+              d24: state.d24 || null,
+              d60: state.d60 || null,
+              endpointOutputs: state.endpointOutputs || {}
+            });
+        appRoot.TimingEngine.render(result, targetId);
+      } catch (error) {
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.innerHTML = `<div class="card tiny muted">Timing engine could not run: ${escapeHtml(error.message)}</div>`;
         }
       }
     }
@@ -164,6 +212,10 @@
       failedCount: document.getElementById("failedCount"),
       analysisOutput: document.getElementById("analysisOutput"),
       analysisBar: document.getElementById("analysisBar"),
+      wealthOutput: document.getElementById("wealthOutput"),
+      runWealthBtn: document.getElementById("runWealthBtn"),
+      timingOutput: document.getElementById("timingOutput"),
+      runTimingBtn: document.getElementById("runTimingBtn"),
       rawDataBox: document.getElementById("rawDataBox"),
       includeSensitiveToggle: document.getElementById("includeSensitiveToggle"),
       copyJsonFormat: document.getElementById("copyJsonFormat"),
@@ -1379,6 +1431,49 @@
       };
     }
 
+    /**
+     * Fetch Vimsottari Dasa information (vimsottari/dasa-information) as a reusable helper.
+     * Accepts either a full payload object or discrete birth fields via `profilePayload`.
+     * `eventData` may be provided separately; if omitted, the birth datetime is used.
+     * `config` is used to extract stored API keys (astroKey1...)
+     * Returns: { ok: true, data: {...}, attempts } or { ok: false, error, attempts }
+     */
+    async function fetchVimsottariDasaInfo(profilePayload = {}, eventData = null, config = {}) {
+      const keys = getAstroKeys(config);
+
+      const p = profilePayload || {};
+      const year = p.year ?? p.y ?? null;
+      const month = p.month ?? p.m ?? null;
+      const date = p.date ?? p.d ?? null;
+      const hours = p.hours ?? p.h ?? 0;
+      const minutes = p.minutes ?? p.min ?? 0;
+      const seconds = p.seconds ?? 0;
+      const latitude = p.latitude ?? p.lat ?? 0;
+      const longitude = p.longitude ?? p.lng ?? p.lon ?? 0;
+      const timezone = safeNumber(p.timezone ?? p.tz ?? 5.5, 5.5);
+      const settings = p.settings || { observation_point: "topocentric", ayanamsha: "lahiri" };
+
+      const event_payload = eventData || { year, month, date, hours, minutes, seconds };
+
+      const payload = {
+        year,
+        month,
+        date,
+        hours,
+        minutes,
+        seconds,
+        latitude,
+        longitude,
+        timezone,
+        config: settings,
+        event_data: event_payload
+      };
+
+      const result = await fetchAstroEndpointWithRetry("vimsottari/dasa-information", payload, keys);
+      if (!result.ok) return result;
+      return { ok: true, data: extractChartOutput(result.data), attempts: result.attempts };
+    }
+
     async function fetchSelectedAstroApis(payload, eventData, config, selectedEndpoints) {
       const keys = getAstroKeys(config);
       const responseMap = {};
@@ -1627,6 +1722,7 @@ Rules:
         state.d9 = charts.d9 || {};
         state.d10 = charts.d10 || charts.endpointOutputs?.d10?.data || charts.endpointOutputs?.d10 || null;
         state.d2 = charts.d2 || charts.endpointOutputs?.d2?.data || charts.endpointOutputs?.d2 || null;
+        state.d11 = charts.d11 || charts.endpointOutputs?.d11?.data || charts.endpointOutputs?.d11 || null;
         state.d24 = charts.d24 || charts.endpointOutputs?.d24?.data || charts.endpointOutputs?.d24 || null;
         state.d60 = charts.d60 || charts.endpointOutputs?.d60?.data || charts.endpointOutputs?.d60 || null;
         state.endpointOutputs = charts.endpointOutputs || {};
@@ -1652,6 +1748,8 @@ Rules:
         state.analysis = report;
         nodes.analysisOutput.textContent = report;
         refreshCareerEnginePanel();
+        refreshWealthEnginePanel();
+        refreshTimingEnginePanel();
 
         const live = !demo && normalizeKey(parseConfig().data.geminiKey);
         const okCount = Object.values(state.endpointOutputs).filter(item => item.ok).length;
@@ -1668,6 +1766,8 @@ Rules:
         state.analysis = fallback;
         nodes.analysisOutput.textContent = `Error during live generation: ${error.message}\n\n${fallback}`;
         refreshCareerEnginePanel();
+        refreshWealthEnginePanel();
+        refreshTimingEnginePanel();
         setStatus("Recovered with fallback", error.message);
       } finally {
         setLoading(false);
@@ -1696,6 +1796,8 @@ Rules:
     });
 
     nodes.submitBtn.addEventListener("click", () => handleGenerate({ demo: false }));
+    nodes.runWealthBtn?.addEventListener("click", refreshWealthEnginePanel);
+    nodes.runTimingBtn?.addEventListener("click", refreshTimingEnginePanel);
 
     let locationSearchTimer = null;
     nodes.location.addEventListener("input", () => {
