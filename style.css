@@ -798,6 +798,24 @@
 
     /* Toasts */
     #toastContainer { display:flex; flex-direction:column; gap:10px; }
+
+/* Chart canvas sizing inside cards */
+.card canvas { width: 100% !important; height: 220px !important; display: block; }
+
+/* Simple light-theme override for easier printing or user preference */
+.light-theme {
+  --bg: #f7fafc;
+  --bg-2: #eef2ff;
+  --panel: rgba(255,255,255,0.9);
+  --panel-strong: #ffffff;
+  --stroke: rgba(30,58,138,0.08);
+  --text: #0b1220;
+  --muted: #4b5563;
+  --accent: #b45309;
+}
+
+.light-theme body { background: linear-gradient(160deg, var(--bg), var(--bg-2)); color: var(--text); }
+
     .toast-card {
       min-width: 240px;
       max-width: 420px;

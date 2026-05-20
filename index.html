@@ -8,12 +8,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js" defer></script>
     <script src="career_engine.js" defer></script>
     <script src="wealth_engine.js" defer></script>
     <script src="timing_engine.js" defer></script>
 </head>
 <body>
+  <button id="themeToggle" class="btn btn-secondary" style="position:fixed;right:18px;top:18px;z-index:999;">🌙</button>
   <div class="shell">
     <section class="hero">
       <div class="hero-card">
@@ -67,6 +69,26 @@
         </div>
       </div>
     </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Interactive Charts</h2>
+          <div class="sub">Quick visual summaries from engines — updates when you generate a report or load demo data.</div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="card">
+          <h3>Wealth Engine Summary</h3>
+          <canvas id="wealthChart" width="400" height="200"></canvas>
+        </div>
+        <div class="card">
+          <h3>Timing Engine Overview</h3>
+          <canvas id="timingChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </section>
+
 
     <section class="panel">
       <div class="section-head">

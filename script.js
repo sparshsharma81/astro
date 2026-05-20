@@ -910,6 +910,8 @@
       renderKundliChart(d1);
       nodes.analysisBar.style.setProperty("--w", `${Math.min(100, 25 + planets * 9)}%`);
       updateRawDataBox();
+      // update visual charts when summary changes
+      try { updateChartsFromState(); } catch (e) { /* ignore if charts not ready */ }
     }
 
     function getRawDataSnapshot() {
@@ -1900,3 +1902,71 @@ Rules:
     setStatus("Ready", "Enter birth details and generate analysis. API config is preserved.");
     setLocationStatus("Search a birthplace to compare OpenCage matches on the map.");
     nodes.analysisOutput.textContent = "Click Generate Analysis to create a full astrology report. Demo mode is already loaded for quick testing.";
+
+    /* ====== Lightweight Charting & Theme Toggle (Chart.js) ====== */
+    let wealthChartObj = null;
+    let timingChartObj = null;
+
+    function initCharts() {
+      try {
+        const wCtx = document.getElementById('wealthChart')?.getContext('2d');
+        const tCtx = document.getElementById('timingChart')?.getContext('2d');
+        if (wCtx && !wealthChartObj) {
+          wealthChartObj = new Chart(wCtx, {
+            type: 'bar',
+            data: {
+              labels: [],
+              datasets: [{ label: 'Average Bala', data: [], backgroundColor: '#7dd3fc' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+        if (tCtx && !timingChartObj) {
+          timingChartObj = new Chart(tCtx, {
+            type: 'doughnut',
+            data: { labels: ['Fire','Earth','Air','Water'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#fb7185','#f59e0b','#60a5fa','#34d399'] }] },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+      } catch (e) {
+        console.warn('Chart init failed', e?.message || e);
+      }
+    }
+
+    function updateChartsFromState() {
+      try {
+        // Wealth chart from balas.overall
+        const overall = (state.summary && state.summary.balas && state.summary.balas.overall) ? state.summary.balas.overall : null;
+        if (wealthChartObj && overall) {
+          const labels = Object.keys(overall);
+          const values = labels.map(k => overall[k] || 0);
+          wealthChartObj.data.labels = labels;
+          wealthChartObj.data.datasets[0].data = values;
+          wealthChartObj.update();
+        }
+
+        // Timing chart: element distribution
+        const signs = getCurrentSigns(state.d1 || {});
+        const counts = { Fire:0, Earth:0, Air:0, Water:0 };
+        signs.forEach(s => { const el = signInfo(s).element || 'Balanced'; if (counts[el] !== undefined) counts[el]++; });
+        if (timingChartObj) {
+          timingChartObj.data.datasets[0].data = [counts.Fire, counts.Earth, counts.Air, counts.Water];
+          timingChartObj.update();
+        }
+      } catch (e) {
+        console.warn('Chart update failed', e?.message || e);
+      }
+    }
+
+    // initialize charts on load and wire theme toggle
+    try {
+      initCharts();
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+          const body = document.body;
+          const isLight = body.classList.toggle('light-theme');
+          themeToggle.textContent = isLight ? '☀️' : '🌙';
+        });
+      }
+    } catch (e) { console.warn('Init small UI enhancements failed', e?.message || e); }
