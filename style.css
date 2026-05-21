@@ -402,6 +402,9 @@
       box-shadow: 0 14px 28px rgba(255, 184, 77, 0.2);
     }
 
+    .actions .btn { min-width: 140px; }
+
+
     .btn-secondary {
       color: var(--text);
       background: rgba(255, 255, 255, 0.06);

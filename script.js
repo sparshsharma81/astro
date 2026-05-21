@@ -1801,6 +1801,93 @@ Rules:
     nodes.runWealthBtn?.addEventListener("click", refreshWealthEnginePanel);
     nodes.runTimingBtn?.addEventListener("click", refreshTimingEnginePanel);
 
+    // Export analysis output to PDF using html2canvas + jsPDF
+    async function exportReportToPDF() {
+      try {
+        const el = document.getElementById('analysisOutput');
+        if (!el) return setStatus('Error', 'No analysis output to export');
+        // ensure visible (some output areas may be hidden in small screens)
+        const originalBg = el.style.background;
+        el.style.background = window.getComputedStyle(el).backgroundColor || '#fff';
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+        el.style.background = originalBg;
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf || { jsPDF: window.jsPDF };
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgWidth = pageWidth - 40;
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        let cursorY = 40;
+        pdf.setFontSize(12);
+        const client = nodes.name?.value || 'Client';
+        pdf.text(`AstroScope Report - ${client}`, 40, 28);
+        pdf.addImage(imgData, 'PNG', 20, cursorY, imgWidth, imgHeight);
+        pdf.save(`astro-report-${client.replace(/\s+/g,'_')}.pdf`);
+        setStatus('Exported', 'PDF report downloaded');
+      } catch (err) {
+        console.error('Export PDF error', err);
+        setStatus('Error', 'Failed to export PDF');
+      }
+    }
+
+    // Save and load simple profile to localStorage
+    function saveProfileToStorage() {
+      try {
+        const profile = {
+          name: nodes.name?.value || '',
+          dob: nodes.dob?.value || '',
+          tob: nodes.tob?.value || '',
+          location: nodes.location?.value || '',
+          timezone: nodes.timezone?.value || '',
+          analysisStyle: nodes.analysisStyle?.value || '',
+          config: nodes.config?.value || ''
+        };
+        localStorage.setItem('astro_profile_v1', JSON.stringify(profile));
+        setStatus('Saved', 'Profile saved to local storage');
+      } catch (e) {
+        console.error('Save profile failed', e);
+        setStatus('Error', 'Unable to save profile');
+      }
+    }
+
+    function loadProfileFromStorage() {
+      try {
+        const raw = localStorage.getItem('astro_profile_v1');
+        if (!raw) return setStatus('Not found', 'No saved profile found in local storage');
+        const p = JSON.parse(raw);
+        nodes.name.value = p.name || nodes.name.value;
+        nodes.dob.value = p.dob || nodes.dob.value;
+        nodes.tob.value = p.tob || nodes.tob.value;
+        nodes.location.value = p.location || nodes.location.value;
+        nodes.timezone.value = p.timezone || nodes.timezone.value;
+        nodes.analysisStyle.value = p.analysisStyle || nodes.analysisStyle.value;
+        nodes.config.value = p.config || nodes.config.value;
+        setStatus('Loaded', 'Profile loaded from local storage');
+        // refresh location UI
+        state.location.selected = null;
+        state.location.candidates = [];
+        renderLocationCandidates([]);
+        renderLocationMap(null);
+      } catch (e) {
+        console.error('Load profile failed', e);
+        setStatus('Error', 'Unable to load profile');
+      }
+    }
+
+    document.getElementById('exportPdfBtn')?.addEventListener('click', exportReportToPDF);
+    document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileToStorage);
+    document.getElementById('loadProfileBtn')?.addEventListener('click', loadProfileFromStorage);
+
+    // Keyboard shortcuts: Shift+E export, Shift+S save, Shift+L load
+    window.addEventListener('keydown', (e) => {
+      if (!e.shiftKey) return;
+      if (e.key === 'E' || e.key === 'e') { e.preventDefault(); exportReportToPDF(); }
+      if (e.key === 'S' || e.key === 's') { e.preventDefault(); saveProfileToStorage(); }
+      if (e.key === 'L' || e.key === 'l') { e.preventDefault(); loadProfileFromStorage(); }
+    });
+
     let locationSearchTimer = null;
     nodes.location.addEventListener("input", () => {
       state.location.selected = null;

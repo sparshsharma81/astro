@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js" defer></script>
     <script src="career_engine.js" defer></script>
     <script src="wealth_engine.js" defer></script>
@@ -97,9 +99,12 @@
           <div class="sub">Enter the native’s details, select live API mode if desired, and generate a professional report.</div>
         </div>
         <div class="actions">
-          <button class="btn btn-secondary" id="demoBtn" type="button">Load Demo Data</button>
-          <button class="btn btn-primary" id="submitBtn" type="button">Generate Analysis</button>
-          <a href="divisional.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">📊 View Divisional Charts</a>
+          <button class="btn btn-secondary" id="demoBtn" type="button" aria-label="Load demo data">Load Demo Data</button>
+          <button class="btn btn-primary" id="submitBtn" type="button" aria-label="Generate analysis">Generate Analysis</button>
+          <button class="btn btn-secondary" id="exportPdfBtn" type="button" aria-label="Export report as PDF">Export PDF</button>
+          <button class="btn btn-secondary" id="saveProfileBtn" type="button" aria-label="Save profile locally">Save Profile</button>
+          <button class="btn btn-secondary" id="loadProfileBtn" type="button" aria-label="Load profile from local storage">Load Profile</button>
+          <a href="divisional.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block;" aria-label="View divisional charts">📊 View Divisional Charts</a>
         </div>
       </div>
 
