@@ -1832,6 +1832,26 @@ Rules:
       }
     }
 
+    // Export raw JSON snapshot of current state
+    function exportJsonSnapshot() {
+      try {
+        const snapshot = getRawDataSnapshot();
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `astro-snapshot-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setStatus('Exported', 'JSON snapshot downloaded');
+      } catch (e) {
+        console.error('Export JSON error', e);
+        setStatus('Error', 'Failed to export JSON');
+      }
+    }
+
     // Save and load simple profile to localStorage
     function saveProfileToStorage() {
       try {
@@ -1879,6 +1899,7 @@ Rules:
     document.getElementById('exportPdfBtn')?.addEventListener('click', exportReportToPDF);
     document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileToStorage);
     document.getElementById('loadProfileBtn')?.addEventListener('click', loadProfileFromStorage);
+    document.getElementById('exportJsonBtn')?.addEventListener('click', exportJsonSnapshot);
 
     // Keyboard shortcuts: Shift+E export, Shift+S save, Shift+L load
     window.addEventListener('keydown', (e) => {
@@ -2015,6 +2036,20 @@ Rules:
             options: { responsive: true, maintainAspectRatio: false }
           });
         }
+        // Bala chart (per-planet stacked bars)
+        const bCtx = document.getElementById('balaChart')?.getContext('2d');
+        if (bCtx && !window.balaChartObj) {
+          window.balaChartObj = new Chart(bCtx, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { x: { stacked: true }, y: { stacked: true } },
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+        }
       } catch (e) {
         console.warn('Chart init failed', e?.message || e);
       }
@@ -2040,6 +2075,24 @@ Rules:
           timingChartObj.data.datasets[0].data = [counts.Fire, counts.Earth, counts.Air, counts.Water];
           timingChartObj.update();
         }
+
+        // Bala chart: per-planet stacked bars
+        try {
+          const perPlanet = state.summary?.balas?.perPlanet || null;
+          const balaChart = window.balaChartObj;
+          if (balaChart && perPlanet) {
+            const metrics = ['SthanaBala','KaalaBala','DigBala','CheshtaBala','DrigBala','NaisargikaBala'];
+            const planets = Object.keys(perPlanet);
+            balaChart.data.labels = planets;
+            // build datasets for each metric
+            balaChart.data.datasets = metrics.map((m, idx) => ({
+              label: m.replace('Bala',''),
+              data: planets.map(p => perPlanet[p][m] || 0),
+              backgroundColor: ['#60a5fa','#f59e0b','#7dd3fc','#fb7185','#34d399','#fbbf24'][idx]
+            }));
+            balaChart.update();
+          }
+        } catch (e) { console.warn('Bala chart update error', e); }
       } catch (e) {
         console.warn('Chart update failed', e?.message || e);
       }
