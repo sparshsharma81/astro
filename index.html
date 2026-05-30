@@ -106,6 +106,7 @@
           <button class="btn btn-secondary" id="demoBtn" type="button" aria-label="Load demo data">Load Demo Data</button>
           <button class="btn btn-primary" id="submitBtn" type="button" aria-label="Generate analysis">Generate Analysis</button>
           <button class="btn btn-secondary" id="exportPdfBtn" type="button" aria-label="Export report as PDF">Export PDF</button>
+          <button class="btn btn-accent" id="exportFullBtn" type="button" aria-label="Export full report">Export Full Report</button>
           <button class="btn btn-secondary" id="exportJsonBtn" type="button" aria-label="Export report as JSON">Export JSON</button>
           <button class="btn btn-secondary" id="saveProfileBtn" type="button" aria-label="Save profile locally">Save Profile</button>
           <button class="btn btn-secondary" id="loadProfileBtn" type="button" aria-label="Load profile from local storage">Load Profile</button>
@@ -113,9 +114,14 @@
         </div>
       </div>
 
-      <div class="form-grid">
+      <div class="chart-grid">
         <div class="field">
           <label for="name">Name</label>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+            <label style="font-size:13px; font-weight:700;">View:</label>
+            <button class="btn btn-secondary" id="wealthToggleStacked" type="button">Stacked</button>
+            <button class="btn btn-secondary" id="wealthToggleNormalize" type="button">Normalize</button>
+          </div>
           <input id="name" type="text" placeholder="Enter native name" value="Client" />
         </div>
         <div class="field">
@@ -124,6 +130,11 @@
         </div>
         <div class="field">
           <label for="tob">Time of Birth</label>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+            <label style="font-size:13px; font-weight:700;">Options:</label>
+            <button class="btn btn-secondary" id="balaToggleStacked" type="button">Stacked</button>
+            <button class="btn btn-secondary" id="balaToggleNormalize" type="button">Normalize</button>
+          </div>
           <input id="tob" type="time" required />
         </div>
         <div class="field">
@@ -178,7 +189,7 @@
              "astroKey10":"A7YvxPDqs67bk1Qmyh1QH3tqPNOM0cdQ5Qlr0WYd",
              "astroKey11":"nG4NFN8fH16IlgC6YvfpU2G6oc4dLXHP6J3uxSSC",
         "geminiKey": "",
-        "modelName": "gemini-2.0-flash"
+        "modelName": "gemini-3-flash-preview"
       }</textarea>
         </div>
       </div>
