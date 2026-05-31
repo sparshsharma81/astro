@@ -1852,6 +1852,72 @@ Rules:
       }
     }
 
+    // Export full multi-page report (analysis + charts)
+    async function exportFullReport() {
+      try {
+        showLoading(true);
+        const { jsPDF } = window.jspdf || { jsPDF: window.jsPDF };
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // Title page
+        pdf.setFontSize(18);
+        pdf.text('AstroScope — Full Report', 40, 60);
+        pdf.setFontSize(12);
+        pdf.text(`Client: ${nodes.name?.value || 'Client'}`, 40, 84);
+        pdf.text(`Generated: ${new Date().toLocaleString()}`, 40, 100);
+
+        // Add analysisOutput as its own page via html2canvas
+        const analysisEl = document.getElementById('analysisOutput');
+        if (analysisEl) {
+          const canvas = await html2canvas(analysisEl, { scale: 2, useCORS: true });
+          const img = canvas.toDataURL('image/png');
+          const imgProps = pdf.getImageProperties(img);
+          const imgW = pageWidth - 80;
+          const imgH = (imgProps.height * imgW) / imgProps.width;
+          pdf.addPage();
+          pdf.addImage(img, 'PNG', 40, 40, imgW, Math.min(imgH, pageHeight - 80));
+        }
+
+        // Append each chart canvas as its own page (wealth, timing, bala)
+        const chartIds = ['wealthChart', 'timingChart', 'balaChart'];
+        for (const id of chartIds) {
+          const c = document.getElementById(id);
+          if (!c) continue;
+          let imgData;
+          try {
+            // canvas element available for Chart.js
+            const chartCanvas = c.tagName.toLowerCase() === 'canvas' ? c : c.querySelector('canvas');
+            if (chartCanvas && chartCanvas.toDataURL) imgData = chartCanvas.toDataURL('image/png');
+          } catch (e) { imgData = null; }
+
+          if (!imgData) {
+            // fallback to html2canvas capture of container
+            const parent = c.parentElement || c;
+            const tmp = await html2canvas(parent, { scale: 2, useCORS: true });
+            imgData = tmp.toDataURL('image/png');
+          }
+
+          if (imgData) {
+            pdf.addPage();
+            const props = pdf.getImageProperties(imgData);
+            const w = pageWidth - 80;
+            const h = (props.height * w) / props.width;
+            pdf.addImage(imgData, 'PNG', 40, 40, w, Math.min(h, pageHeight - 80));
+          }
+        }
+
+        pdf.save(`astro-full-report-${(nodes.name?.value||'client').replace(/\s+/g,'_')}.pdf`);
+        setStatus('Exported', 'Full PDF downloaded');
+      } catch (err) {
+        console.error('Export full report error', err);
+        setStatus('Error', 'Failed to export full report');
+      } finally {
+        showLoading(false);
+      }
+    }
+
     // Save and load simple profile to localStorage
     function saveProfileToStorage() {
       try {
@@ -1897,6 +1963,7 @@ Rules:
     }
 
     document.getElementById('exportPdfBtn')?.addEventListener('click', exportReportToPDF);
+    document.getElementById('exportFullBtn')?.addEventListener('click', exportFullReport);
     document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileToStorage);
     document.getElementById('loadProfileBtn')?.addEventListener('click', loadProfileFromStorage);
     document.getElementById('exportJsonBtn')?.addEventListener('click', exportJsonSnapshot);
@@ -2055,6 +2122,67 @@ Rules:
       }
     }
 
+    // Chart display controls
+    document.getElementById('wealthToggleStacked')?.addEventListener('click', () => {
+      if (!wealthChartObj) return;
+      wealthChartObj.options.scales = wealthChartObj.options.scales || {};
+      wealthChartObj.options.scales.x = wealthChartObj.options.scales.x || {};
+      wealthChartObj.options.scales.y = wealthChartObj.options.scales.y || {};
+      wealthChartObj.options.plugins = wealthChartObj.options.plugins || {};
+      // toggle stacked
+      const current = !!wealthChartObj.options.scales.x.stacked;
+      wealthChartObj.options.scales.x.stacked = !current;
+      wealthChartObj.options.scales.y.stacked = !current;
+      wealthChartObj.update();
+    });
+
+    document.getElementById('wealthToggleNormalize')?.addEventListener('click', () => {
+      if (!wealthChartObj) return;
+      // normalize dataset to percentage of sum
+      const ds = wealthChartObj.data.datasets[0];
+      if (!ds) return;
+      const original = ds._originalData || ds.data.slice();
+      if (!ds._originalData) ds._originalData = ds.data.slice();
+      const isNormalized = ds._normalized;
+      if (!isNormalized) {
+        const total = ds._originalData.reduce((s,v) => s + Number(v || 0), 0) || 1;
+        ds.data = ds._originalData.map(v => Math.round((v/total)*100));
+        ds._normalized = true;
+      } else {
+        ds.data = ds._originalData.slice();
+        ds._normalized = false;
+      }
+      wealthChartObj.update();
+    });
+
+    document.getElementById('balaToggleStacked')?.addEventListener('click', () => {
+      const b = window.balaChartObj; if (!b) return;
+      const current = !!b.options.scales?.x?.stacked;
+      b.options.scales = b.options.scales || {}; b.options.scales.x = b.options.scales.x || {}; b.options.scales.y = b.options.scales.y || {};
+      b.options.scales.x.stacked = !current; b.options.scales.y.stacked = !current; b.update();
+    });
+
+    document.getElementById('balaToggleNormalize')?.addEventListener('click', () => {
+      const b = window.balaChartObj; if (!b) return;
+      // normalize per-planet stacks to percentages
+      const datasets = b.data.datasets;
+      if (!datasets || !datasets.length) return;
+      const planets = b.data.labels || [];
+      const original = b._originalDatasets || datasets.map(d => d.data.slice());
+      if (!b._originalDatasets) b._originalDatasets = datasets.map(d => d.data.slice());
+      if (!b._normalized) {
+        for (let i=0;i<planets.length;i++){
+          const sum = datasets.reduce((s,d)=>s + (Number(d.data[i]||0)),0) || 1;
+          datasets.forEach(d=>{ d.data[i] = Math.round((d.data[i]/sum)*100); });
+        }
+        b._normalized = true;
+      } else {
+        b.data.datasets.forEach((d,idx)=> d.data = b._originalDatasets[idx].slice());
+        b._normalized = false;
+      }
+      b.update();
+    });
+
     function updateChartsFromState() {
       try {
         // Wealth chart from balas.overall
@@ -2110,3 +2238,18 @@ Rules:
         });
       }
     } catch (e) { console.warn('Init small UI enhancements failed', e?.message || e); }
+
+    // Loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.style.position = 'fixed';
+    loadingOverlay.style.inset = '0';
+    loadingOverlay.style.display = 'none';
+    loadingOverlay.style.alignItems = 'center';
+    loadingOverlay.style.justifyContent = 'center';
+    loadingOverlay.style.background = 'rgba(2,6,23,0.6)';
+    loadingOverlay.style.zIndex = 99999;
+    loadingOverlay.innerHTML = '<div style="padding:20px 28px; background:var(--panel); border-radius:12px; border:1px solid var(--stroke);">Generating report&hellip;</div>';
+    document.body.appendChild(loadingOverlay);
+
+    function showLoading(on) { loadingOverlay.style.display = on ? 'flex' : 'none'; }
