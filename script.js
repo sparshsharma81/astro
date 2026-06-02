@@ -1852,8 +1852,9 @@ Rules:
       }
     }
 
-    // Export full multi-page report (analysis + charts)
+    // Export full multi-page report (analysis + charts) with TOC and pagination
     async function exportFullReport() {
+      const margin = 40;
       try {
         showLoading(true);
         const { jsPDF } = window.jspdf || { jsPDF: window.jsPDF };
@@ -1861,54 +1862,130 @@ Rules:
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
 
-        // Title page
-        pdf.setFontSize(18);
-        pdf.text('AstroScope — Full Report', 40, 60);
-        pdf.setFontSize(12);
-        pdf.text(`Client: ${nodes.name?.value || 'Client'}`, 40, 84);
-        pdf.text(`Generated: ${new Date().toLocaleString()}`, 40, 100);
+        const tocEntries = [];
 
-        // Add analysisOutput as its own page via html2canvas
+        // Title page (page 1)
+        pdf.setFontSize(18);
+        pdf.text('AstroScope — Full Report', margin, 60);
+        pdf.setFontSize(12);
+        const clientName = (nodes.name?.value || 'Client').toString();
+        pdf.text(`Client: ${clientName}`, margin, 84);
+        pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, 100);
+
+        // Reserve TOC page (page 2)
+        pdf.addPage();
+        const tocPage = pdf.getNumberOfPages();
+
+        // helper: add an image (dataURL) and split into pages if too tall
+        async function addImageWithPagination(imgData, caption) {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              try {
+                const drawW = pageWidth - margin * 2;
+                const scale = drawW / img.width;
+                const fullDrawH = img.height * scale;
+                const availableH = pageHeight - margin * 2;
+
+                // start on a fresh page
+                pdf.addPage();
+                const firstPageIndex = pdf.getNumberOfPages();
+                tocEntries.push({ title: caption, page: firstPageIndex });
+
+                if (fullDrawH <= availableH) {
+                  pdf.addImage(imgData, 'PNG', margin, margin, drawW, fullDrawH);
+                  resolve();
+                  return;
+                }
+
+                // need to slice vertically
+                const sliceHpx = Math.floor(availableH / scale);
+                let sy = 0;
+                let sliceIndex = 0;
+                while (sy < img.height) {
+                  const sh = Math.min(sliceHpx, img.height - sy);
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = sh;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, sy, img.width, sh, 0, 0, img.width, sh);
+                  const chunkData = canvas.toDataURL('image/png');
+                  const drawH = sh * scale;
+                  if (sliceIndex > 0) pdf.addPage();
+                  pdf.addImage(chunkData, 'PNG', margin, margin, drawW, drawH);
+                  sy += sh;
+                  sliceIndex++;
+                }
+                resolve();
+              } catch (err) { reject(err); }
+            };
+            img.onerror = (e) => reject(new Error('Failed to load image for PDF'));
+            img.src = imgData;
+          });
+        }
+
+        // Add analysis output (may span pages)
         const analysisEl = document.getElementById('analysisOutput');
         if (analysisEl) {
           const canvas = await html2canvas(analysisEl, { scale: 2, useCORS: true });
-          const img = canvas.toDataURL('image/png');
-          const imgProps = pdf.getImageProperties(img);
-          const imgW = pageWidth - 80;
-          const imgH = (imgProps.height * imgW) / imgProps.width;
-          pdf.addPage();
-          pdf.addImage(img, 'PNG', 40, 40, imgW, Math.min(imgH, pageHeight - 80));
+          await addImageWithPagination(canvas.toDataURL('image/png'), 'Executive Summary & Analysis');
         }
 
-        // Append each chart canvas as its own page (wealth, timing, bala)
-        const chartIds = ['wealthChart', 'timingChart', 'balaChart'];
-        for (const id of chartIds) {
-          const c = document.getElementById(id);
-          if (!c) continue;
-          let imgData;
+        // Add charts (each as their own section)
+        const chartIds = [ { id: 'wealthChart', title: 'Wealth / Bala Overview' }, { id: 'timingChart', title: 'Timing & Element Distribution' }, { id: 'balaChart', title: 'Per-Planet Bala Breakdown' } ];
+        for (const entry of chartIds) {
+          const el = document.getElementById(entry.id);
+          if (!el) continue;
+          let imgData = null;
           try {
-            // canvas element available for Chart.js
-            const chartCanvas = c.tagName.toLowerCase() === 'canvas' ? c : c.querySelector('canvas');
-            if (chartCanvas && chartCanvas.toDataURL) imgData = chartCanvas.toDataURL('image/png');
+            const chartCanvas = el.tagName.toLowerCase() === 'canvas' ? el : el.querySelector('canvas');
+            if (chartCanvas && chartCanvas.toDataURL) {
+              // render at higher pixel ratio for print quality
+              const dpr = Math.max(2, window.devicePixelRatio || 1);
+              const tmpCanvas = document.createElement('canvas');
+              tmpCanvas.width = chartCanvas.width * dpr;
+              tmpCanvas.height = chartCanvas.height * dpr;
+              tmpCanvas.getContext('2d').scale(dpr, dpr);
+              tmpCanvas.getContext('2d').drawImage(chartCanvas, 0, 0);
+              imgData = tmpCanvas.toDataURL('image/png');
+            }
           } catch (e) { imgData = null; }
 
           if (!imgData) {
-            // fallback to html2canvas capture of container
-            const parent = c.parentElement || c;
+            const parent = el.parentElement || el;
             const tmp = await html2canvas(parent, { scale: 2, useCORS: true });
             imgData = tmp.toDataURL('image/png');
           }
 
-          if (imgData) {
-            pdf.addPage();
-            const props = pdf.getImageProperties(imgData);
-            const w = pageWidth - 80;
-            const h = (props.height * w) / props.width;
-            pdf.addImage(imgData, 'PNG', 40, 40, w, Math.min(h, pageHeight - 80));
-          }
+          if (imgData) await addImageWithPagination(imgData, entry.title);
         }
 
-        pdf.save(`astro-full-report-${(nodes.name?.value||'client').replace(/\s+/g,'_')}.pdf`);
+        // Build Table of Contents on reserved page
+        const tocLines = ['Table of Contents', ''];
+        tocEntries.forEach(t => tocLines.push(`${t.page}. ${t.title}`));
+        pdf.setPage(tocPage);
+        pdf.setFontSize(14);
+        pdf.text('Table of Contents', margin, 60);
+        pdf.setFontSize(11);
+        let y = 84;
+        tocEntries.forEach(t => {
+          pdf.text(`${t.title}`, margin, y);
+          pdf.text(String(t.page), pageWidth - margin - 20, y);
+          y += 18;
+          if (y > pageHeight - margin) { pdf.addPage(); y = margin + 20; }
+        });
+
+        // Add simple footers with page numbers
+        const total = pdf.getNumberOfPages();
+        for (let i = 1; i <= total; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(10);
+          pdf.text(`${clientName}`, margin, pageHeight - 18);
+          pdf.text(`${i} / ${total}`, pageWidth / 2, pageHeight - 18, { align: 'center' });
+        }
+
+        const safeName = clientName.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 120) || 'client';
+        pdf.save(`astro-full-report-${safeName}.pdf`);
         setStatus('Exported', 'Full PDF downloaded');
       } catch (err) {
         console.error('Export full report error', err);
