@@ -107,6 +107,7 @@
           <button class="btn btn-primary" id="submitBtn" type="button" aria-label="Generate analysis">Generate Analysis</button>
           <button class="btn btn-secondary" id="exportPdfBtn" type="button" aria-label="Export report as PDF">Export PDF</button>
           <button class="btn btn-accent" id="exportFullBtn" type="button" aria-label="Export full report">Export Full Report</button>
+          <button class="btn btn-secondary" id="openExportSettingsBtn" type="button" aria-label="Export settings">Export Settings</button>
           <button class="btn btn-secondary" id="exportJsonBtn" type="button" aria-label="Export report as JSON">Export JSON</button>
           <button class="btn btn-secondary" id="saveProfileBtn" type="button" aria-label="Save profile locally">Save Profile</button>
           <button class="btn btn-secondary" id="loadProfileBtn" type="button" aria-label="Load profile from local storage">Load Profile</button>
@@ -242,6 +243,25 @@
     <div>
       <h2>🪐 Professional Kundli Chart</h2>
       <div class="sub">Interactive Vedic birth chart with planetary positions, house significations, and aspect lines. Click planets to see their aspects highlighted.</div>
+    </div>
+
+    <!-- Export Settings Modal -->
+    <div id="exportSettingsModal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="exportSettingsTitle">
+      <div class="modal-backdrop" data-dismiss="modal"></div>
+      <div class="modal-panel" role="document">
+        <h3 id="exportSettingsTitle">Export Settings</h3>
+        <div class="modal-body">
+          <label><input type="checkbox" id="exportIncludeAnalysis" checked /> Include Analysis / Narrative</label>
+          <label><input type="checkbox" id="exportIncludeCharts" checked /> Include Charts</label>
+          <label><input type="checkbox" id="exportIncludeRaw" /> Include Raw JSON Snapshot</label>
+          <div style="margin-top:8px;"><label for="exportDpi">Image scale (print quality):</label>
+            <select id="exportDpi"><option value="1">1x</option><option value="2" selected>2x (recommended)</option><option value="3">3x</option></select></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="exportSettingsCancel">Cancel</button>
+          <button class="btn btn-primary" id="exportSettingsSave">Save</button>
+        </div>
+      </div>
     </div>
   </div>
   
